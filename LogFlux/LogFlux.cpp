@@ -10,6 +10,7 @@
 #include <QScrollBar>
 #include "DataSourceItem.h"
 #include "QThread"
+#include <QInputDialog>
 
 LogFlux::LogFlux(QWidget *parent)
     : QMainWindow(parent)
@@ -109,18 +110,53 @@ void LogFlux::onAddFileSource()
 
 void LogFlux::onAddServerSource()
 {
-    // Minimal server source creation for future use
-	auto server = new ServerSource(QStringLiteral("localhost"), 0);
-    // Not implemented: server->start() etc.
+	// Ask for host and port
+	bool ok = false;
+	int port = QInputDialog::getInt(this, tr("Server port"), tr("Port:"), 5000, 1, 65535, 1, &ok);
+	if (!ok)
+		return;
+
+	QString host = QInputDialog::getText(this, tr("Server host"), tr("Host:"), QLineEdit::Normal, QStringLiteral(""), &ok);
+	if (!ok)
+		return;
+
+	auto* server = new ServerSource(host, port);
+	auto* thread = new QThread;
+	server->moveToThread(thread);
+
 	SourceData sourceData;
 	sourceData.source = server;
+	sourceData.thread = thread;
 	sourceData.model = new QStandardItemModel(this);
+	sourceData.signalDelagator = new SourceSignalDelegator();
 	m_sources.push_back(std::move(sourceData));
 
-    // Do this when model is actually set in the view
-	//m_currentSource = m_sources.size() - 1;
-	//listItem->setData(Qt::UserRole, m_currentSource);
+	m_currentSource = m_sources.size() - 1;
 
+	QObject::connect(server, &DataSource::onHeader, this, &LogFlux::onHeader);
+	QObject::connect(server, &DataSource::onNewLine, this, &LogFlux::onNewLine);
+	QObject::connect(thread, &QThread::started, server, &DataSource::startProcessing);
+	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::refresh, server, &DataSource::refresh);
+	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::startTailing, server, &DataSource::startTailing);
+	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::stopTailing, server, &DataSource::stopTailing);
+
+	DataSourceItem* item = new DataSourceItem(ui.listSources);
+	// server initially offline until it starts listening
+	item->ui.labelOffline->setVisible(true);
+
+	item->ui.labelName->setText(QStringLiteral("%1:%2").arg(host).arg(port));
+	item->setToolTip(item->ui.labelName->text());
+
+	QListWidgetItem* listItem = new QListWidgetItem(ui.listSources);
+	listItem->setData(Qt::UserRole, static_cast<int>(m_currentSource));
+
+	ui.listSources->addItem(listItem);
+	ui.listSources->setItemWidget(listItem, item);
+	ui.listSources->setCurrentItem(listItem);
+
+	ui.tableLog->setModel(m_sources[m_currentSource].model);
+
+	thread->start();
 }
 
 void LogFlux::clearModel(QStandardItemModel* model)

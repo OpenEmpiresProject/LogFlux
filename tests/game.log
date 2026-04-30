@@ -1,0 +1,157 @@
+[18:52:38.328][info][T0]: Game starting
+[18:52:38.331][info][T0]: Initializing subsystems...
+[18:52:38.366][info][T0]: Max z-order: 4800
+[18:52:38.961][info][T0]: Python sys.path:
+[18:52:38.964][info][T0]:   
+[18:52:38.966][info][T0]:   C:\Users\malee\AppData\Local\Programs\Python\Python39\python39.zip
+[18:52:38.967][info][T0]:   C:\Users\malee\AppData\Local\Programs\Python\Python39\Lib
+[18:52:38.968][info][T0]:   C:\Users\malee\AppData\Local\Programs\Python\Python39\DLLs
+[18:52:38.969][info][T0]:   D:\Projects\openEmpires\OpenEmpires\build\bin\Debug
+[18:52:38.971][info][T0]:   C:\Users\malee\AppData\Roaming\Python\Python39\site-packages
+[18:52:38.972][info][T0]:   C:\Users\malee\AppData\Local\Programs\Python\Python39
+[18:52:38.973][info][T0]:   C:\Users\malee\AppData\Local\Programs\Python\Python39\lib\site-packages
+[18:52:42.226][info][T0]: Pydantic is found
+[18:52:44.210][debug][T0]: Entity validation passed
+[18:52:44.210][debug][T0]: Registering entity. name 'ui_element', type 10000
+[18:52:44.212][debug][T0]: Registering entity. name 'default_tileset', type 2
+[18:52:44.212][debug][T0]: Registering entity. name 'villager', type 3
+[18:52:44.213][debug][T0]: Registering entity. name 'wood', type 4
+[18:52:44.213][error][T0]: Entity name villager already registered with type 3
+[18:52:44.214][debug][T0]: Registering entity. name 'gold', type 5
+[18:52:44.214][debug][T0]: Registering entity. name 'stone', type 6
+[18:52:44.215][error][T0]: Entity name wood already registered with type 4
+[18:52:44.215][debug][T0]: Registering entity. name 'mill', type 7
+[18:52:44.216][debug][T0]: Registering entity. name 'wood_camp', type 8
+[18:52:44.217][debug][T0]: Registering entity. name 'mine_camp', type 9
+[18:52:44.218][debug][T0]: Registering entity. name 'town_center', type 10
+[18:52:44.218][debug][T0]: Registering entity. name 'house', type 11
+[18:52:44.219][debug][T0]: Registering entity. name 'construction_site_small', type 12
+[18:52:44.219][debug][T0]: Registering entity. name 'construction_site_medium', type 13
+[18:52:44.220][debug][T0]: Registering entity. name 'construction_site_large', type 14
+[18:52:44.221][debug][T0]: Registering entity. name 'construction_site_huge', type 15
+[18:52:44.222][debug][T0]: Registering entity. name 'construction_site_gate', type 16
+[18:52:44.224][debug][T0]: Registering entity. name 'barracks', type 17
+[18:52:44.225][debug][T0]: Registering entity. name 'militia', type 18
+[18:52:44.226][debug][T0]: Registering entity. name 'archer', type 19
+[18:52:44.227][debug][T0]: Registering entity. name 'palisade', type 20
+[18:52:44.228][debug][T0]: Registering entity. name 'stone_wall', type 21
+[18:52:44.228][debug][T0]: Registering entity. name 'stone_gate', type 22
+[18:52:44.230][error][T0]: Entity name default_tileset already registered with type 2
+[18:52:44.231][debug][T0]: Registering entity. name 'resource_panel', type 23
+[18:52:44.231][debug][T0]: Registering entity. name 'control_panel', type 24
+[18:52:44.232][debug][T0]: Registering entity. name 'progress_bar', type 25
+[18:52:44.233][debug][T0]: Registering entity. name 'cursor', type 26
+[18:52:44.234][debug][T0]: Registering entity. name 'generic_widget', type 27
+[18:52:44.234][debug][T0]: Registering entity. name 'fire', type 28
+[18:52:44.235][debug][T0]: Registering entity. name 'arrow', type 29
+[18:52:44.285][debug][T0]: Entity archer has animation with DRS file graphics.drs and SLP id 708 for action anim_idle
+[18:52:44.287][debug][T0]: GraphicsID(T19) maps to DRS: , SLP: 708
+[18:52:44.302][debug][T0]: Entity archer has animation with DRS file graphics.drs and SLP id 713 for action anim_move
+[18:52:44.303][debug][T0]: GraphicsID(T19, A1) maps to DRS: , SLP: 713
+[18:52:44.319][debug][T0]: Entity archer has animation with DRS file graphics.drs and SLP id 702 for action anim_attack
+[18:52:44.320][debug][T0]: GraphicsID(T19, A8) maps to DRS: , SLP: 702
+[18:52:44.333][debug][T0]: Entity archer has animation with DRS file graphics.drs and SLP id 705 for action anim_die
+[18:52:44.334][debug][T0]: GraphicsID(T19, A9) maps to DRS: , SLP: 705
+[18:52:44.361][debug][T0]: GraphicsID(T19, isI1) maps to DRS: , SLP: 50730
+[18:52:44.377][debug][T0]: GraphicsID(T17) maps to DRS: , SLP: 130
+[18:52:44.387][debug][T0]: GraphicsID(T17, isC1) maps to DRS: , SLP: 238
+[18:52:44.390][debug][T0]: GraphicsID(T17, isI1) maps to DRS: , SLP: 50705
+[18:52:44.394][debug][T0]: GraphicsID(T24) maps to DRS: , SLP: 51135
+[18:52:44.397][debug][T0]: GraphicsID(T26) maps to DRS: , SLP: 51000
+[18:52:44.421][debug][T0]: GraphicsID(T2) maps to DRS: , SLP: 15001
+[18:52:44.439][debug][T0]: Entity fire has animation with DRS file graphics.drs and SLP id 424 for action anim_fire_small
+[18:52:44.440][debug][T0]: GraphicsID(T28) maps to DRS: , SLP: 424
+[18:52:44.456][debug][T0]: Entity fire has animation with DRS file graphics.drs and SLP id 427 for action anim_fire_medium
+[18:52:44.458][debug][T0]: GraphicsID(T28, S1) maps to DRS: , SLP: 427
+[18:52:44.474][debug][T0]: Entity fire has animation with DRS file graphics.drs and SLP id 429 for action anim_fire_large
+[18:52:44.475][debug][T0]: GraphicsID(T28, S2) maps to DRS: , SLP: 429
+[18:52:44.490][debug][T0]: Entity fire has animation with DRS file graphics.drs and SLP id 431 for action anim_fire_huge
+[18:52:44.491][debug][T0]: GraphicsID(T28, S3) maps to DRS: , SLP: 431
+[18:52:44.500][debug][T0]: GraphicsID(T27) maps to DRS: , SLP: 4479
+[18:52:44.510][debug][T0]: GraphicsID(T5) maps to DRS: , SLP: 4479
+[18:52:44.513][debug][T0]: GraphicsID(T5, isI1) maps to DRS: , SLP: 50731
+[18:52:44.525][debug][T0]: GraphicsID(T11) maps to DRS: , SLP: 2223
+[18:52:44.540][debug][T0]: GraphicsID(T11, isC1) maps to DRS: , SLP: 237
+[18:52:44.546][debug][T0]: GraphicsID(T11, isI1) maps to DRS: , SLP: 50705
+[18:52:44.565][debug][T0]: Entity militia has animation with DRS file graphics.drs and SLP id 993 for action anim_idle
+[18:52:44.567][debug][T0]: GraphicsID(T18) maps to DRS: , SLP: 993
+[18:52:44.594][debug][T0]: Entity militia has animation with DRS file graphics.drs and SLP id 997 for action anim_move
+[18:52:44.596][debug][T0]: GraphicsID(T18, A1) maps to DRS: , SLP: 997
+[18:52:44.622][debug][T0]: Entity militia has animation with DRS file graphics.drs and SLP id 987 for action anim_attack
+[18:52:44.628][debug][T0]: GraphicsID(T18, A8) maps to DRS: , SLP: 987
+[18:52:44.645][debug][T0]: Entity militia has animation with DRS file graphics.drs and SLP id 990 for action anim_die
+[18:52:44.647][debug][T0]: GraphicsID(T18, A9) maps to DRS: , SLP: 990
+[18:52:44.656][debug][T0]: GraphicsID(T18, isI1) maps to DRS: , SLP: 50730
+[18:52:44.685][debug][T0]: GraphicsID(T7) maps to DRS: , SLP: 3483
+[18:52:44.707][debug][T0]: GraphicsID(T7, isC1) maps to DRS: , SLP: 237
+[18:52:44.712][debug][T0]: GraphicsID(T7, isI1) maps to DRS: , SLP: 50705
+[18:52:44.729][debug][T0]: GraphicsID(T9) maps to DRS: , SLP: 3492
+[18:52:44.744][debug][T0]: GraphicsID(T9, isC1) maps to DRS: , SLP: 237
+[18:52:44.749][debug][T0]: GraphicsID(T9, isI1) maps to DRS: , SLP: 50705
+[18:52:44.764][debug][T0]: GraphicsID(T20, O1) maps to DRS: , SLP: 1828
+[18:52:44.777][debug][T0]: GraphicsID(T20, O2) maps to DRS: , SLP: 1828
+[18:52:44.788][debug][T0]: GraphicsID(T20, O3) maps to DRS: , SLP: 1828
+[18:52:44.798][debug][T0]: GraphicsID(T20, O4) maps to DRS: , SLP: 1828
+[18:52:44.808][debug][T0]: GraphicsID(T20, O5) maps to DRS: , SLP: 1828
+[18:52:44.811][debug][T0]: GraphicsID(T20, isI1) maps to DRS: , SLP: 50705
+[18:52:44.820][debug][T0]: GraphicsID(T20, O1, isC1) maps to DRS: , SLP: 236
+[18:52:44.829][debug][T0]: GraphicsID(T20, O2, isC1) maps to DRS: , SLP: 236
+[18:52:44.837][debug][T0]: GraphicsID(T20, O4, isC1) maps to DRS: , SLP: 236
+[18:52:44.845][debug][T0]: GraphicsID(T20, O5, isC1) maps to DRS: , SLP: 236
+[18:52:44.855][debug][T0]: GraphicsID(T20, O3, isC1) maps to DRS: , SLP: 236
+[18:52:44.858][debug][T0]: GraphicsID(T25) maps to DRS: , SLP: 50764
+[18:52:44.861][debug][T0]: GraphicsID(T23) maps to DRS: , SLP: 51135
+[18:52:44.872][debug][T0]: GraphicsID(T6) maps to DRS: , SLP: 1034
+[18:52:44.876][debug][T0]: GraphicsID(T6, isI1) maps to DRS: , SLP: 50731
+[18:52:44.879][debug][T0]: GraphicsID(T22, isI1) maps to DRS: , SLP: 50705
+[18:52:44.892][debug][T0]: GraphicsID(T22, O1) maps to DRS: , SLP: 2391
+[18:52:44.902][debug][T0]: GraphicsID(T22, O1) maps to DRS: , SLP: 1926, Part 2
+[18:52:44.911][debug][T0]: GraphicsID(T22, O1) maps to DRS: , SLP: 2391, Part 3
+[18:52:44.933][debug][T0]: GraphicsID(T22, O2) maps to DRS: , SLP: 2391
+[18:52:44.942][debug][T0]: GraphicsID(T22, O2) maps to DRS: , SLP: 1926, Part 2
+[18:52:44.951][debug][T0]: GraphicsID(T22, O2) maps to DRS: , SLP: 2391, Part 3
+[18:52:44.963][debug][T0]: GraphicsID(T22, O4) maps to DRS: , SLP: 3999
+[18:52:44.972][debug][T0]: GraphicsID(T22, O4) maps to DRS: , SLP: 2391, Part 2
+[18:52:44.983][debug][T0]: GraphicsID(T22, O4) maps to DRS: , SLP: 2391, Part 3
+[18:52:44.991][debug][T0]: GraphicsID(T22, O5) maps to DRS: , SLP: 2391
+[18:52:45.002][debug][T0]: GraphicsID(T22, O5) maps to DRS: , SLP: 4087, Part 2
+[18:52:45.011][debug][T0]: GraphicsID(T22, O5) maps to DRS: , SLP: 2391, Part 3
+[18:52:45.021][debug][T0]: GraphicsID(T22, O1, S1) maps to DRS: , SLP: 2391
+[18:52:45.031][debug][T0]: GraphicsID(T22, O1, S1) maps to DRS: , SLP: 2355, Part 2
+[18:52:45.039][debug][T0]: GraphicsID(T22, O1, S1) maps to DRS: , SLP: 2391, Part 3
+[18:52:45.048][debug][T0]: GraphicsID(T22, O2, S1) maps to DRS: , SLP: 2391
+[18:52:45.056][debug][T0]: GraphicsID(T22, O2, S1) maps to DRS: , SLP: 2355, Part 2
+[18:52:45.065][debug][T0]: GraphicsID(T22, O2, S1) maps to DRS: , SLP: 2391, Part 3
+[18:52:45.073][debug][T0]: GraphicsID(T22, O4, S1) maps to DRS: , SLP: 4023
+[18:52:45.081][debug][T0]: GraphicsID(T22, O4, S1) maps to DRS: , SLP: 2391, Part 2
+[18:52:45.089][debug][T0]: GraphicsID(T22, O4, S1) maps to DRS: , SLP: 2391, Part 3
+[18:52:45.101][debug][T0]: GraphicsID(T22, O5, S1) maps to DRS: , SLP: 2391
+[18:52:45.111][debug][T0]: GraphicsID(T22, O5, S1) maps to DRS: , SLP: 4111, Part 2
+[18:52:45.120][debug][T0]: GraphicsID(T22, O5, S1) maps to DRS: , SLP: 2391, Part 3
+[18:52:45.128][debug][T0]: GraphicsID(T22, O1, isC1) maps to DRS: , SLP: 3706
+[18:52:45.136][debug][T0]: GraphicsID(T22, O2, isC1) maps to DRS: , SLP: 3706
+[18:52:45.143][debug][T0]: GraphicsID(T22, O4, isC1) maps to DRS: , SLP: 4067
+[18:52:45.152][debug][T0]: GraphicsID(T22, O5, isC1) maps to DRS: , SLP: 4155
+[18:52:45.160][debug][T0]: GraphicsID(T21, O1) maps to DRS: , SLP: 2110
+[18:52:45.168][debug][T0]: GraphicsID(T21, O2) maps to DRS: , SLP: 2110
+[18:52:45.176][debug][T0]: GraphicsID(T21, O3) maps to DRS: , SLP: 2110
+[18:52:45.184][debug][T0]: GraphicsID(T21, O4) maps to DRS: , SLP: 2110
+[18:52:45.193][debug][T0]: GraphicsID(T21, O5) maps to DRS: , SLP: 2110
+[18:52:45.195][debug][T0]: GraphicsID(T21, isI1) maps to DRS: , SLP: 50705
+[18:52:45.202][debug][T0]: GraphicsID(T21, O1, isC1) maps to DRS: , SLP: 236
+[18:52:45.211][debug][T0]: GraphicsID(T21, O2, isC1) maps to DRS: , SLP: 236
+[18:52:45.219][debug][T0]: GraphicsID(T21, O4, isC1) maps to DRS: , SLP: 236
+[18:52:45.228][debug][T0]: GraphicsID(T21, O5, isC1) maps to DRS: , SLP: 236
+[18:52:45.236][debug][T0]: GraphicsID(T21, O3, isC1) maps to DRS: , SLP: 236
+[18:52:45.247][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 900
+[18:52:45.255][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 3601, Part 2
+[18:52:45.265][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 3605, Part 3
+[18:52:45.274][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 4617, Part 4
+[18:52:45.283][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 4621, Part 5
+[18:52:45.299][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 3597, Part 6
+[18:52:45.321][debug][T0]: GraphicsID(T10) maps to DRS: , SLP: 4613, Part 7
+[18:52:45.341][debug][T0]: GraphicsID(T10, isC1) maps to DRS: , SLP: 239
+[18:52:45.344][debug][T0]: GraphicsID(T10, isI1) maps to DRS: , SLP: 50705
+[18:52:45.356][debug][T0]: Entity villager has animation with DRS file graphics.drs and SLP id 1388 for action anim_idle
+[18:52:45.357][debug][T0]: GraphicsID(T3) maps to DRS: , SLP: 1388
+[18:52:45.365][debug][T0]: Entity
