@@ -1,6 +1,7 @@
 #include "LogFlux.h"
 #include "FileSource.h"
 #include "ServerSource.h"
+#include "Settings.h"
 
 #include <QFileDialog>
 #include <QDebug>
@@ -8,59 +9,68 @@
 #include <QFontDatabase>
 #include <QListWidget>
 #include <QScrollBar>
-#include "DataSourceItem.h"
 #include "QThread"
 #include <QInputDialog>
+#include <QWidgetAction>
+#include <QShortcut>
 
 LogFlux::LogFlux(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
-	ui.splitterMain->setStretchFactor(0, 1);
-	ui.splitterMain->setStretchFactor(1, 4);
-    ui.tableLog->horizontalHeader()->setStretchLastSection(true);
-	ui.tableLog->setWordWrap(true);
-    ui.tableLog->setShowGrid(false);
-    ui.tableLog->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    ui.tableLog->setEditTriggers(QAbstractItemView::NoEditTriggers); // Disable editing
-
-	// Reduce the height of rows
-    ui.tableLog->verticalHeader()->setMinimumSectionSize(0); // Allow shrinking below default
-    ui.tableLog->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
 	// Set monospace font
 	QFont font;
 	font.setFamilies({  "Consolas", "Courier New", "Monaco", "Menlo", "DejaVu Sans Mono", "Monospace" });
 	font.setStyleHint(QFont::Monospace);
 	font.setFixedPitch(true);
-	ui.tableLog->setFont(font);
+	ui.plainTextEdit->setFont(font);
 
-	// Ensure user select rows but not individual cells
-    ui.tableLog->setSelectionBehavior(QAbstractItemView::SelectRows);
+	// To detect pressing Shift while pressing enter to go to previous search result
+	ui.editSearch->installEventFilter(this);
 
-	ui.actionStopTailing->setVisible(false);
+	setupShortcuts();
+	setupStatusBar();
 
-	// Without these toolbar buttons will not be guaranteed to be square shape
-	ui.mainToolBar->setIconSize(QSize(24, 24));
-	ui.mainToolBar->setStyleSheet(R"(
-QToolButton {
-    padding: 2px;
-    margin: 0px;
-}
-)");
+	QObject::connect(ui.btnClearLog, &QPushButton::clicked, this, &LogFlux::onClearLog);
+	QObject::connect(ui.btnReload, &QPushButton::clicked, this, &LogFlux::onRefreshLog);
+	QObject::connect(ui.btnBrowseFile, &QPushButton::clicked, this, &LogFlux::onAddFileSource);
+	QObject::connect(ui.btnSettings, &QPushButton::clicked, this, &LogFlux::launchSettingsWindow);
+	QObject::connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged,
+		this, &LogFlux::highlightCurrentLine);
+	QObject::connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged,
+		this, &LogFlux::updateSelections);
+	QObject::connect(ui.editSearch, &QLineEdit::textChanged, this, &LogFlux::highlightAllMatches);
+	QObject::connect(ui.btnSearchDown, &QPushButton::clicked, this, &LogFlux::findNext);
+	QObject::connect(ui.btnSearchUp, &QPushButton::clicked, this, &LogFlux::findPrevious);
+	QObject::connect(ui.radioServer, &QRadioButton::toggled, this, &LogFlux::onServerSelect);
+	QObject::connect(ui.radioFile, &QRadioButton::toggled, this, &LogFlux::onFileSelect);
 
-	QObject::connect(ui.btnAddFile, &QPushButton::clicked, this, &LogFlux::onAddFileSource);
-	QObject::connect(ui.btnAddServer, &QPushButton::clicked, this, &LogFlux::onAddServerSource);
-	QObject::connect(ui.actionClearLogs, &QAction::triggered, this, &LogFlux::onClearLog);
-	QObject::connect(ui.actionRefresh, &QAction::triggered, this, &LogFlux::onRefreshLog);
-	QObject::connect(ui.actionTailLog, &QAction::triggered, this, &LogFlux::onStartTailing);
-	QObject::connect(ui.actionStopTailing, &QAction::triggered, this, &LogFlux::onStopTailing);
-    QObject::connect(ui.listSources, &QListWidget::currentItemChanged, this, &LogFlux::onSourceChange);
+	startServer("", 5000); // Start server, but file would be the default source
 }
 
 LogFlux::~LogFlux()
 {
 
+}
+
+void LogFlux::addNewSource(SourceType type, DataSource* source)
+{
+	auto* thread = new QThread;
+	source->moveToThread(thread);
+
+	SourceData sourceData;
+	sourceData.source = source;
+	sourceData.thread = thread;
+	sourceData.signalDelagator = new SourceSignalDelegator();
+	m_sources.insert(type, std::move(sourceData));
+
+	QObject::connect(source, &DataSource::onNewLine, this, &LogFlux::onNewLine);
+	QObject::connect(source, &DataSource::onStatusChange, this, &LogFlux::onSourceStatusChange);
+	QObject::connect(thread, &QThread::started, source, &DataSource::startProcessing);
+	QObject::connect(sourceData.signalDelagator, &SourceSignalDelegator::refresh, source, &DataSource::refresh);
+
+	thread->start();
 }
 
 void LogFlux::onAddFileSource()
@@ -69,192 +79,468 @@ void LogFlux::onAddFileSource()
     if (path.isEmpty())
         return;
 
-	auto source = new FileSource(path);
-	auto* thread = new QThread;
-	source->moveToThread(thread);
+	destroyExistingSource(SourceType::FILE_SOURCE);
 
-	SourceData sourceData;
-	sourceData.source = source;
-	sourceData.thread = thread;
-	sourceData.model = new QStandardItemModel(this);
-	sourceData.signalDelagator = new SourceSignalDelegator();
-	m_sources.push_back(std::move(sourceData));
+	DataSource* source = new FileSource(path);
+	auto description = source->description();
+	m_currentSource = SourceType::FILE_SOURCE;
 
-	m_currentSource = m_sources.size() - 1;
+	addNewSource(SourceType::FILE_SOURCE, source);
 
-	QObject::connect(source, &DataSource::onHeader, this, &LogFlux::onHeader);
-	QObject::connect(source, &DataSource::onNewLine, this, &LogFlux::onNewLine);
-	QObject::connect(thread, &QThread::started, source, &DataSource::startProcessing);
-	QObject::connect(sourceData.signalDelagator, &SourceSignalDelegator::refresh, source, &DataSource::refresh);
-	QObject::connect(sourceData.signalDelagator, &SourceSignalDelegator::startTailing, source, &DataSource::startTailing);
-	QObject::connect(sourceData.signalDelagator, &SourceSignalDelegator::stopTailing, source, &DataSource::stopTailing);
-
-    DataSourceItem* item = new DataSourceItem(ui.listSources);
-	item->ui.labelOffline->setVisible(false);
-
-    QFileInfo fi(path);
-    item->ui.labelName->setText(fi.fileName());
-    item->setToolTip(fi.absoluteFilePath());
-
-    QListWidgetItem* listItem = new QListWidgetItem(ui.listSources);
-    listItem->setData(Qt::UserRole, m_currentSource);
-
-    ui.listSources->addItem(listItem);
-    ui.listSources->setItemWidget(listItem, item);
-	ui.listSources->setCurrentItem(listItem);
-
-	ui.tableLog->setModel(sourceData.model);
-
-	thread->start();
+	ui.labelSourceStatus->setText(description);
+	ui.labelSourceStatus->setVisible(true);
 }
 
-void LogFlux::onAddServerSource()
+void LogFlux::startServer(const QString& host, int port)
 {
-	// Ask for host and port
-	bool ok = false;
-	int port = QInputDialog::getInt(this, tr("Server port"), tr("Port:"), 5000, 1, 65535, 1, &ok);
-	if (!ok)
-		return;
-
-	QString host = QInputDialog::getText(this, tr("Server host"), tr("Host:"), QLineEdit::Normal, QStringLiteral(""), &ok);
-	if (!ok)
-		return;
-
-	auto* server = new ServerSource(host, port);
-	auto* thread = new QThread;
-	server->moveToThread(thread);
-
-	SourceData sourceData;
-	sourceData.source = server;
-	sourceData.thread = thread;
-	sourceData.model = new QStandardItemModel(this);
-	sourceData.signalDelagator = new SourceSignalDelegator();
-	m_sources.push_back(std::move(sourceData));
-
-	m_currentSource = m_sources.size() - 1;
-
-	QObject::connect(server, &DataSource::onHeader, this, &LogFlux::onHeader);
-	QObject::connect(server, &DataSource::onNewLine, this, &LogFlux::onNewLine);
-	QObject::connect(thread, &QThread::started, server, &DataSource::startProcessing);
-	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::refresh, server, &DataSource::refresh);
-	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::startTailing, server, &DataSource::startTailing);
-	QObject::connect(m_sources[m_currentSource].signalDelagator, &SourceSignalDelegator::stopTailing, server, &DataSource::stopTailing);
-
-	DataSourceItem* item = new DataSourceItem(ui.listSources);
-	// server initially offline until it starts listening
-	item->ui.labelOffline->setVisible(true);
-
-	item->ui.labelName->setText(QStringLiteral("%1:%2").arg(host).arg(port));
-	item->setToolTip(item->ui.labelName->text());
-
-	QListWidgetItem* listItem = new QListWidgetItem(ui.listSources);
-	listItem->setData(Qt::UserRole, static_cast<int>(m_currentSource));
-
-	ui.listSources->addItem(listItem);
-	ui.listSources->setItemWidget(listItem, item);
-	ui.listSources->setCurrentItem(listItem);
-
-	ui.tableLog->setModel(m_sources[m_currentSource].model);
-
-	thread->start();
-}
-
-void LogFlux::clearModel(QStandardItemModel* model)
-{
-	if (model)
-	{
-		model->removeRows(0, model->rowCount());
-		model->removeColumns(0, model->columnCount());
-	}
+	destroyExistingSource(SourceType::SERVER_SOURCE);
+	addNewSource(SourceType::SERVER_SOURCE, new ServerSource(host, port));
+	m_currentSource = SourceType::FILE_SOURCE;
 }
 
 void LogFlux::onClearLog()
 {
-	if (m_currentSource < m_sources.size())
-	{
-		auto& source = m_sources[m_currentSource];
-		clearModel(source.model);
-	}
+	ui.plainTextEdit->clear();
 }
 
 void LogFlux::onRefreshLog()
 {
-	if (m_currentSource < m_sources.size())
+	ui.plainTextEdit->clear();
+
+	if (m_sources.contains(m_currentSource))
 	{
 		auto& source = m_sources[m_currentSource];
-		clearModel(source.model);
 		source.signalDelagator->emiRefresh();
 	}
 }
 
-void LogFlux::onSourceChange(QListWidgetItem* current, QListWidgetItem* previous)
+void LogFlux::onServerSelect(bool selected)
 {
-    int index = current->data(Qt::UserRole).toInt();
-    auto& source = m_sources[index];
-	ui.tableLog->setModel(source.model);
+	if (not selected)
+		return;
+
+	m_currentSource = SourceType::SERVER_SOURCE;
+	ui.plainTextEdit->clear();
+
+	if (m_sources.contains(m_currentSource))
+	{
+		const auto& sourceData = m_sources[m_currentSource];
+		
+		ui.labelSourceStatus->setText(sourceData.source->description());
+		ui.labelSourceStatus->setVisible(true);
+		ui.labelOnline->setVisible(sourceData.online);
+		ui.labelOffline->setVisible(not sourceData.online);
+	}
+	else
+	{
+		ui.labelSourceStatus->setVisible(false);
+		ui.labelOnline->setVisible(false);
+		ui.labelOffline->setVisible(false);
+	}
 }
 
-void LogFlux::onNewLine(DataSource* source, QList<QStandardItem*> cells)
+void LogFlux::onFileSelect(bool selected)
 {
-	auto* bar = ui.tableLog->verticalScrollBar();
-	bool follow = (bar->value() == bar->maximum());
+	if (not selected)
+		return;
 
-	for (auto& sourceData : m_sources)
+	m_currentSource = SourceType::FILE_SOURCE;
+	ui.plainTextEdit->clear();
+
+	if (m_sources.contains(m_currentSource))
 	{
+		const auto& sourceData = m_sources[m_currentSource];
+
+		ui.labelSourceStatus->setText(sourceData.source->description());
+		ui.labelSourceStatus->setVisible(true);
+		ui.labelOnline->setVisible(sourceData.online);
+		ui.labelOffline->setVisible(not sourceData.online);
+	}
+	else
+	{
+		ui.labelSourceStatus->setVisible(false);
+		ui.labelOnline->setVisible(false);
+		ui.labelOffline->setVisible(false);
+	}
+}
+
+void LogFlux::onNewLine(DataSource* source, const QString& line)
+{
+	// Data from different source than currently active, ignore
+	if (m_sources.value(m_currentSource, SourceData()).source != source)
+		return;
+
+	QTextCharFormat fmt;
+	if (line.contains("trace") or line.contains("info"))
+	{
+		fmt.setForeground(QColor(80, 160, 255));  // softer bright blue
+	}
+	else if (line.contains("warn"))
+	{
+		fmt.setForeground(Qt::yellow);
+	}
+	else if (line.contains("error"))
+	{
+		fmt.setForeground(Qt::red);
+	}
+	else
+	{
+		fmt.setForeground(Qt::white);
+	}
+
+	bool atEnd = ui.plainTextEdit->textCursor().atEnd();
+	
+	// create a separate cursor for insertion
+	QTextCursor insertCursor(ui.plainTextEdit->document());
+	insertCursor.movePosition(QTextCursor::End);
+	insertCursor.insertText(line + "\n", fmt);
+
+	if (atEnd)
+	{
+		ui.plainTextEdit->moveCursor(QTextCursor::End);
+	}
+}
+
+void LogFlux::onSourceStatusChange(DataSource* source, bool online)
+{
+	for (auto it = m_sources.begin(); it != m_sources.end(); ++it)
+	{
+		const auto& type = it.key();
+		auto& sourceData = it.value();
+
 		if (sourceData.source == source)
 		{
-			sourceData.model->appendRow(cells);
-			break;
+			sourceData.online = online;
+			emit sourceStatusChange(type, source, online);
+
+			if (type == m_currentSource)
+			{
+				ui.labelOnline->setVisible(online);
+				ui.labelOffline->setVisible(not online);
+			}
 		}
 	}
+}
 
-	auto& currentViewingSource = m_sources[m_currentSource];
-	if (currentViewingSource.source == source)
+void LogFlux::highlightCurrentLine()
+{
+	QTextEdit::ExtraSelection selection;
+
+	QColor lineColor = QColor(60, 60, 60); // subtle background
+	selection.format.setBackground(lineColor);
+	selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+
+	selection.cursor = ui.plainTextEdit->textCursor();
+	selection.cursor.clearSelection();
+
+	QList<QTextEdit::ExtraSelection> selections;
+	selections.append(selection);
+	ui.plainTextEdit->setExtraSelections(selections);
+}
+
+void LogFlux::highlightAllMatches(const QString& text)
+{
+	m_searchSelections.clear();
+	m_searchText = text;
+	m_currentMatch = QTextCursor();
+
+	if (text.isEmpty())
 	{
-		if (follow) 
+		updateSelections();
+		updateSearchCount();
+
+		// Done with search, so move the focus back to log area. otherwise user
+		// has to click there again.
+		ui.editSearch->clearFocus();
+		ui.plainTextEdit->setFocus();
+
+		return;
+	}
+
+	QTextDocument* doc = ui.plainTextEdit->document();
+	QTextCursor cursor(doc);
+
+	QTextCharFormat fmt;
+	fmt.setBackground(QColor(255, 255, 0, 100)); // yellow
+
+	while (!cursor.isNull() && !cursor.atEnd())
+	{
+		cursor = doc->find(text, cursor);
+
+		if (!cursor.isNull())
 		{
-			// QTableView has not updated its scrollbar yet. So we need to queue/delay this
-			// calculation
-			QMetaObject::invokeMethod(bar, [bar]() {
-				bar->setValue(bar->maximum());
-				}, Qt::QueuedConnection);
+			QTextEdit::ExtraSelection sel;
+			sel.cursor = cursor;
+			sel.format = fmt;
+			m_searchSelections.append(sel);
 		}
 	}
+
+	// set first match as current (optional)
+	if (!m_searchSelections.isEmpty())
+	{
+		m_currentMatch = m_searchSelections.first().cursor;
+		ui.plainTextEdit->setTextCursor(m_currentMatch);
+	}
+
+	updateSelections();
+	updateSearchCount();
 }
 
-void LogFlux::onHeader(DataSource* source, QStringList headers)
+void LogFlux::updateSelections()
 {
-	for (auto& sourceData : m_sources)
+	QList<QTextEdit::ExtraSelection> selections;
+
+	// current line highlight
+	QTextEdit::ExtraSelection lineSel;
+	lineSel.format.setBackground(QColor(60, 60, 60));
+	lineSel.format.setProperty(QTextFormat::FullWidthSelection, true);
+	lineSel.cursor = ui.plainTextEdit->textCursor();
+	lineSel.cursor.clearSelection();
+	selections.append(lineSel);
+
+	// search matches
+	for (auto sel : m_searchSelections)
 	{
-		if (sourceData.source == source)
+		// highlight current match differently
+		if (!m_currentMatch.isNull() &&
+			sel.cursor.selectionStart() == m_currentMatch.selectionStart() &&
+			sel.cursor.selectionEnd() == m_currentMatch.selectionEnd())
 		{
-			sourceData.model->setColumnCount(headers.size());
-			sourceData.model->setHorizontalHeaderLabels(headers);
-			return;
+			sel.format.setBackground(QColor(255, 165, 0)); // orange
+		}
+
+		selections.append(sel);
+	}
+
+	ui.plainTextEdit->setExtraSelections(selections);
+}
+
+void LogFlux::findNext()
+{
+	if (m_searchText.isEmpty())
+		return;
+
+	QTextCursor currentCursor = ui.plainTextEdit->textCursor();
+	QTextCursor found = ui.plainTextEdit->document()->find(m_searchText, currentCursor);
+
+	if (found.isNull())
+	{
+		// wrap
+		QTextCursor start(ui.plainTextEdit->document());
+		found = ui.plainTextEdit->document()->find(m_searchText, start);
+	}
+
+	if (!found.isNull())
+	{
+		m_currentMatch = found;
+		ui.plainTextEdit->setTextCursor(found);
+		ui.plainTextEdit->centerCursor();
+	}
+
+	updateSelections();
+	updateSearchCount();
+}
+
+void LogFlux::findPrevious()
+{
+	if (m_searchText.isEmpty())
+		return;
+
+	QTextCursor currentCursor = ui.plainTextEdit->textCursor();
+	QTextCursor found = ui.plainTextEdit->document()->find(
+		m_searchText,
+		currentCursor,
+		QTextDocument::FindBackward
+	);
+
+	if (found.isNull())
+	{
+		QTextCursor end(ui.plainTextEdit->document());
+		end.movePosition(QTextCursor::End);
+
+		found = ui.plainTextEdit->document()->find(
+			m_searchText,
+			end,
+			QTextDocument::FindBackward
+		);
+	}
+
+	if (!found.isNull())
+	{
+		m_currentMatch = found;
+		ui.plainTextEdit->setTextCursor(found);
+		ui.plainTextEdit->centerCursor();
+	}
+
+	updateSelections();
+	updateSearchCount();
+}
+
+bool LogFlux::eventFilter(QObject* obj, QEvent* event)
+{
+	if (obj == ui.editSearch && event->type() == QEvent::KeyPress)
+	{
+		auto* keyEvent = static_cast<QKeyEvent*>(event);
+
+		if (keyEvent->key() == Qt::Key_Return)
+		{
+			if (keyEvent->modifiers() & Qt::ShiftModifier)
+				findPrevious();
+			else
+				findNext();
+
+			return true;
+		}
+		else if (keyEvent->key() == Qt::Key_Escape)
+		{
+			// Clear the search bar
+			ui.editSearch->clear();
+ 
+			return true;
 		}
 	}
+	return QMainWindow::eventFilter(obj, event);
 }
 
-void LogFlux::onStartTailing()
+void LogFlux::launchSettingsWindow()
 {
-	if (m_currentSource < m_sources.size())
-	{
-		auto& source = m_sources[m_currentSource];
-		source.signalDelagator->emitStartTailing();
+	Settings settings(this);
 
-		ui.actionStopTailing->setVisible(true);
-		ui.actionTailLog->setVisible(false);
+	// Server restart
+	connect(settings.ui.btnRestartServer, &QPushButton::clicked,
+		this, [this, &settings]()
+		{
+			startServer(
+				settings.ui.lineEditHost->text(),
+				settings.ui.lineEditPort->text().toInt());
+		});
+
+	// Setting window's server status label update 
+	connect(this, &LogFlux::sourceStatusChange, this, 
+		[this, &settings](SourceType type, DataSource*, bool online)
+		{
+			if (type == SourceType::SERVER_SOURCE)
+			{
+				settings.ui.lineEditSettingServerStatus->setText(online ? "Online" : "Offline");
+			}
+		});
+
+	// Set the current status of the server before launching the setting window
+	auto sourceData = m_sources.value(SourceType::SERVER_SOURCE, SourceData());
+	settings.ui.lineEditSettingServerStatus->setText(sourceData.online ? "Online" : "Offline");
+	
+	settings.exec();
+}
+
+void LogFlux::ensureCursorVisibleOnlyIfNeeded(const QTextCursor& cursor)
+{
+	QRect cursorRect = ui.plainTextEdit->cursorRect(cursor);
+	QRect viewportRect = ui.plainTextEdit->viewport()->rect();
+
+	int margin = 5;
+
+	bool above = cursorRect.top() < viewportRect.top() + margin;
+	bool below = cursorRect.bottom() > viewportRect.bottom() - margin;
+
+	if (above || below)
+	{
+		ui.plainTextEdit->ensureCursorVisible();
 	}
 }
 
-void LogFlux::onStopTailing()
+void LogFlux::goToStartOfLog()
 {
-	if (m_currentSource < m_sources.size())
-	{
-		auto& source = m_sources[m_currentSource];
-		source.signalDelagator->emitStopTailing();
+	QTextCursor cursor(ui.plainTextEdit->document());
+	cursor.movePosition(QTextCursor::Start);
 
-		ui.actionStopTailing->setVisible(false);
-		ui.actionTailLog->setVisible(true);
+	ui.plainTextEdit->setTextCursor(cursor);
+}
+
+void LogFlux::goToEndOfLog()
+{
+	QTextCursor cursor(ui.plainTextEdit->document());
+	cursor.movePosition(QTextCursor::End);
+
+	ui.plainTextEdit->setTextCursor(cursor);
+}
+
+void LogFlux::updateSearchCount()
+{
+	int total = m_searchSelections.size();
+	int currentIndex = 0;
+
+	if (!m_currentMatch.isNull())
+	{
+		for (int i = 0; i < m_searchSelections.size(); ++i)
+		{
+			const auto& sel = m_searchSelections[i];
+			if (sel.cursor.selectionStart() == m_currentMatch.selectionStart() &&
+				sel.cursor.selectionEnd() == m_currentMatch.selectionEnd())
+			{
+				currentIndex = i + 1; // 1-based
+				break;
+			}
+		}
+		ui.editSearch->setSearchInfo(currentIndex, total);
+	}
+	else
+	{
+		// No match for the current non-empty text
+		if (not m_searchText.isEmpty())
+			ui.editSearch->setAsNoResults();
+		else
+			ui.editSearch->setSearchInfo(0, 0);
+	}
+}
+
+void LogFlux::setupShortcuts()
+{
+	new QShortcut(QKeySequence::Find, this, [this]()
+		{
+			ui.editSearch->setFocus();
+			ui.editSearch->selectAll();
+		});
+
+	new QShortcut(Qt::Key_G, this, [this]()
+		{
+			goToStartOfLog();
+		});
+
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_G), this, [this]()
+		{
+			goToEndOfLog();
+		});
+}
+
+void LogFlux::setupStatusBar()
+{
+	statusBar()->addWidget(ui.labelOnline);
+	statusBar()->addWidget(ui.labelOffline);
+	statusBar()->addWidget(ui.labelSourceStatus);
+
+	ui.labelOnline->setVisible(false);
+	ui.labelOffline->setVisible(false);
+	ui.labelSourceStatus->setVisible(false);
+}
+
+void LogFlux::destroyExistingSource(SourceType type)
+{
+	if (m_sources.contains(type))
+	{
+		auto sourceData = m_sources[type];
+
+		// ensure worker deleted in its own thread, otherwise a crash
+		connect(sourceData.thread, &QThread::finished,
+			sourceData.source, &QObject::deleteLater);
+
+		sourceData.thread->quit();
+		sourceData.thread->wait(); // Wait indefinitely 
+
+		delete sourceData.signalDelagator;
+
+		sourceData.thread->deleteLater();
+
+		m_sources.remove(type);
 	}
 }

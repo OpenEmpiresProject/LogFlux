@@ -31,9 +31,9 @@ set(PROJECT_SOURCES
     ServerSource.h
     ServerSource.cpp
     DataSource.h
-    DataSourceItem.h
-    DataSourceItem.cpp
-    DataSourceItem.ui
+    Settings.h
+    Settings.cpp
+    Settings.ui
     resources.qrc
 )
 

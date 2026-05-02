@@ -2,9 +2,9 @@
 
 #include "QMetaType"
 #include "ui_LogFlux.h"
+#include "Settings.h"
 
 #include <QtWidgets/QMainWindow>
-#include <QStandardItemModel>
 #include <memory>
 #include <vector>
 
@@ -23,39 +23,23 @@ public:
         emit refresh();
     }
 
-    void emitStartTailing()
-    {
-        emit startTailing();
-    }
-
-	void emitStopTailing()
-	{
-		emit stopTailing();
-	}
-
-
 signals:
 	void refresh();
-	void startTailing();
-	void stopTailing();
 };
 
 struct SourceData
 {
     DataSource* source = nullptr;
-    QStandardItemModel* model = nullptr;
     QThread* thread = nullptr;
     SourceSignalDelegator* signalDelagator = nullptr;
+	bool online = false;
+};
 
-	// allow move
-	SourceData(SourceData&&) = default;
-	SourceData& operator=(SourceData&&) = default;
-
-	// disallow copy
-	SourceData(const SourceData&) = delete;
-	SourceData& operator=(const SourceData&) = delete;
-
-	SourceData() = default;
+enum SourceType
+{
+	UNKNOWN_SOURCE = -1,
+	SERVER_SOURCE = 0,
+	FILE_SOURCE = 1
 };
 
 class LogFlux : public QMainWindow
@@ -68,20 +52,42 @@ public:
 
 private:
     Ui::LogViewerClass ui;
-    std::vector<SourceData> m_sources;
-    size_t m_currentSource = 0;
 
-    void clearModel(QStandardItemModel* model);
+	// Sources related
+    QMap<SourceType, SourceData> m_sources;
+	SourceType m_currentSource = SourceType::UNKNOWN_SOURCE;
+
+	// Search related
+	QString m_searchText;
+	QList<QTextEdit::ExtraSelection> m_searchSelections;
+	QTextCursor m_currentMatch;
+
+	void startServer(const QString& host, int port);
+	void updateSelections();
+	void updateSearchCount();
+	void ensureCursorVisibleOnlyIfNeeded(const QTextCursor& cursor);
+	void goToStartOfLog();
+	void goToEndOfLog();
+	void setupShortcuts();
+	void setupStatusBar();
+	void destroyExistingSource(SourceType type);
+	void addNewSource(SourceType type, DataSource* source);
 
 private slots:
-    void onAddFileSource();
-    void onAddServerSource();
+	void onAddFileSource();
 	void onClearLog();
 	void onRefreshLog();
-    void onSourceChange(QListWidgetItem* current, QListWidgetItem* previous);
-	void onNewLine(DataSource* source, QList<QStandardItem*> cells);
-	void onHeader(DataSource* source, QStringList headers);
-    void onStartTailing();
-    void onStopTailing();
-};
+	void onServerSelect(bool selected);
+	void onFileSelect(bool selected);
+	void onNewLine(DataSource* source, const QString& line);
+	void onSourceStatusChange(DataSource* source, bool online);
+	void highlightCurrentLine();
+	void highlightAllMatches(const QString& text);
+	void findNext();
+	void findPrevious();
+	bool eventFilter(QObject* obj, QEvent* event);
+	void launchSettingsWindow();
 
+signals:
+	void sourceStatusChange(SourceType type, DataSource* source, bool online);
+};
