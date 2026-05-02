@@ -90,6 +90,7 @@ void LogFlux::onAddFileSource()
 
 	ui.labelSourceStatus->setText(description);
 	ui.labelSourceStatus->setVisible(true);
+	onClearLog();
 }
 
 void LogFlux::startServer(const QString& host, int port)
