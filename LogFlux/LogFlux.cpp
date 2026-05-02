@@ -102,11 +102,22 @@ void LogFlux::startServer(const QString& host, int port)
 void LogFlux::onClearLog()
 {
 	ui.plainTextEdit->clear();
+	ui.labelLineCount->setText("Lines: 0");
+	ui.labelErrorCount->setText("Errors: 0");
+	ui.labelWarningCount->setText("Warns: 0");
+
+	if (m_sources.contains(m_currentSource))
+	{
+		auto& sourceData = m_sources[m_currentSource];
+		sourceData.lineCount = 0;
+		sourceData.errorCount = 0;
+		sourceData.warnCount = 0;
+	}
 }
 
 void LogFlux::onRefreshLog()
 {
-	ui.plainTextEdit->clear();
+	onClearLog();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -120,8 +131,8 @@ void LogFlux::onServerSelect(bool selected)
 	if (not selected)
 		return;
 
+	onClearLog();
 	m_currentSource = SourceType::SERVER_SOURCE;
-	ui.plainTextEdit->clear();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -145,8 +156,8 @@ void LogFlux::onFileSelect(bool selected)
 	if (not selected)
 		return;
 
+	onClearLog();
 	m_currentSource = SourceType::FILE_SOURCE;
-	ui.plainTextEdit->clear();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -171,6 +182,10 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	if (m_sources.value(m_currentSource, SourceData()).source != source)
 		return;
 
+	auto& sourceData = m_sources[m_currentSource];
+	sourceData.lineCount++;
+	ui.labelLineCount->setText("Lines: " + QString::number(sourceData.lineCount));
+
 	QTextCharFormat fmt;
 	if (line.contains("trace") or line.contains("info"))
 	{
@@ -179,10 +194,14 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	else if (line.contains("warn"))
 	{
 		fmt.setForeground(Qt::yellow);
+		sourceData.warnCount++;
+		ui.labelWarningCount->setText("Warns: " + QString::number(sourceData.warnCount));
 	}
 	else if (line.contains("error"))
 	{
 		fmt.setForeground(Qt::red);
+		sourceData.errorCount++;
+		ui.labelErrorCount->setText("Errors: " + QString::number(sourceData.errorCount));
 	}
 	else
 	{
@@ -594,6 +613,14 @@ void LogFlux::setupStatusBar()
 	ui.labelOnline->setVisible(false);
 	ui.labelOffline->setVisible(false);
 	ui.labelSourceStatus->setVisible(false);
+
+	statusBar()->addPermanentWidget(ui.labelErrorCount);
+	statusBar()->addPermanentWidget(ui.labelWarningCount);
+	statusBar()->addPermanentWidget(ui.labelLineCount);
+
+	ui.labelErrorCount->setText("Errors: 0  ");
+	ui.labelWarningCount->setText("Warns: 0  ");
+	ui.labelLineCount->setText("Lines: 0");
 }
 
 void LogFlux::destroyExistingSource(SourceType type)

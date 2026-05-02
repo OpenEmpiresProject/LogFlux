@@ -354,6 +354,80 @@
         <bool>true</bool>
        </property>
       </widget>
+      <widget class="QLabel" name="labelErrorCount">
+       <property name="geometry">
+        <rect>
+         <x>220</x>
+         <y>0</y>
+         <width>71</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: #c75c5c;</string>
+       </property>
+       <property name="text">
+        <string>Error Count</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelWarningCount">
+       <property name="geometry">
+        <rect>
+         <x>300</x>
+         <y>0</y>
+         <width>81</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: #d19a66;</string>
+       </property>
+       <property name="text">
+        <string>Warning Count</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="labelLineCount">
+       <property name="geometry">
+        <rect>
+         <x>390</x>
+         <y>0</y>
+         <width>71</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: #aaaaaa;</string>
+       </property>
+       <property name="text">
+        <string>Line Count</string>
+       </property>
+      </widget>
+      <widget class="Line" name="lineStatusBar1">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>0</y>
+         <width>3</width>
+         <height>61</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+      </widget>
+      <widget class="Line" name="lineStatusBar2">
+       <property name="geometry">
+        <rect>
+         <x>380</x>
+         <y>0</y>
+         <width>3</width>
+         <height>61</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>

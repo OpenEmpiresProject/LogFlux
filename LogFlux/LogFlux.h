@@ -33,6 +33,9 @@ struct SourceData
     QThread* thread = nullptr;
     SourceSignalDelegator* signalDelagator = nullptr;
 	bool online = false;
+	int lineCount = 0;
+	int errorCount = 0;
+	int warnCount = 0;
 };
 
 enum SourceType
