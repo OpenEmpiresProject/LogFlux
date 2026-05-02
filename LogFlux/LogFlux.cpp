@@ -13,6 +13,7 @@
 #include <QInputDialog>
 #include <QWidgetAction>
 #include <QShortcut>
+#include <QRegularExpression>
 
 LogFlux::LogFlux(QWidget *parent)
     : QMainWindow(parent)
@@ -465,6 +466,57 @@ void LogFlux::goToEndOfLog()
 	ui.plainTextEdit->setTextCursor(cursor);
 }
 
+void LogFlux::navigateToLogToken(const QString& token, QTextDocument::FindFlags findFlags)
+{
+	QTextDocument* doc = ui.plainTextEdit->document();
+	if (!doc)
+		return;
+
+	// case-insensitive match for the token
+	QRegularExpression re(token, QRegularExpression::CaseInsensitiveOption);
+
+	QTextCursor current = ui.plainTextEdit->textCursor();
+	QTextCursor found = doc->find(re, current, findFlags);
+
+	// wrap if none found in the given direction
+	if (found.isNull())
+	{
+		QTextCursor edge(doc);
+		if (findFlags & QTextDocument::FindBackward)
+			edge.movePosition(QTextCursor::End); // search backward from end
+		// else default constructed cursor() starts at beginning
+
+		found = doc->find(re, edge, findFlags);
+	}
+
+	if (!found.isNull())
+	{
+		ui.plainTextEdit->setTextCursor(found);
+		ui.plainTextEdit->centerCursor();
+		ensureCursorVisibleOnlyIfNeeded(found);
+	}
+}
+
+void LogFlux::goToNextError()
+{
+	navigateToLogToken(QStringLiteral("error"));
+}
+
+void LogFlux::goToPreviousError()
+{
+	navigateToLogToken(QStringLiteral("error"), QTextDocument::FindBackward);
+}
+
+void LogFlux::goToNextWarning()
+{
+	navigateToLogToken(QStringLiteral("warn"));
+}
+
+void LogFlux::goToPreviousWarning()
+{
+	navigateToLogToken(QStringLiteral("warn"), QTextDocument::FindBackward);
+}
+
 void LogFlux::updateSearchCount()
 {
 	int total = m_searchSelections.size();
@@ -510,6 +562,26 @@ void LogFlux::setupShortcuts()
 	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_G), this, [this]()
 		{
 			goToEndOfLog();
+		});
+
+	new QShortcut(Qt::Key_E, this, [this]()
+		{
+			goToNextError();
+		});
+
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_E), this, [this]()
+		{
+			goToPreviousError();
+		});
+
+	new QShortcut(Qt::Key_W, this, [this]()
+		{
+			goToNextWarning();
+		});
+
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_W), this, [this]()
+		{
+			goToPreviousWarning();
 		});
 }
 

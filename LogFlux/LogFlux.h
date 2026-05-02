@@ -68,6 +68,12 @@ private:
 	void ensureCursorVisibleOnlyIfNeeded(const QTextCursor& cursor);
 	void goToStartOfLog();
 	void goToEndOfLog();
+	void goToNextError();
+	void goToPreviousError();
+	void goToNextWarning();
+	void goToPreviousWarning();
+	// helper for navigating to next/previous token (case-insensitive, wraps)
+	void navigateToLogToken(const QString& token, QTextDocument::FindFlags findFlags = {});
 	void setupShortcuts();
 	void setupStatusBar();
 	void destroyExistingSource(SourceType type);
