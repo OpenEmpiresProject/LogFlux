@@ -31,6 +31,8 @@ LogFlux::LogFlux(QWidget *parent)
 	// To detect pressing Shift while pressing enter to go to previous search result
 	ui.editSearch->installEventFilter(this);
 
+	ui.lineNumberArea->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
+
 	setupShortcuts();
 	setupStatusBar();
 

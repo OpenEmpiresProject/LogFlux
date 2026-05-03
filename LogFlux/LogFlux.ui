@@ -205,115 +205,7 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QPlainTextEdit" name="plainTextEdit">
-      <property name="font">
-       <font>
-        <family>Consolas</family>
-       </font>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-      <property name="plainText">
-       <string>
-
-
-                                                  ██╗      ██████╗  ██████╗ ███████╗██╗     ██╗   ██╗██╗  ██╗                                                    
-                                                  ██║     ██╔═══██╗██╔════╝ ██╔════╝██║     ██║   ██║╚██╗██╔╝
-                                                  ██║     ██║   ██║██║  ███╗█████╗  ██║     ██║   ██║ ╚███╔╝
-                                                  ██║     ██║   ██║██║   ██║██╔══╝  ██║     ██║   ██║ ██╔██╗
-                                                  ███████╗╚██████╔╝╚██████╔╝██║     ███████╗╚██████╔╝██╔╝ ██╗
-                                                  ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-
-
-                                                   Fast, searchable, filterable file and network log viewer
-                                                   
-                                                  Shortcuts:
-                                                   ctrl+f                      search the log
-                                                   enter (inside search)       go to next search result
-                                                   shift+enter (inside search) go to previous search result
-                                                   n (inside logview)          go to next search result   
-                                                   shift+n (inside logview)    go to previous search result
-                                                   g                           go to start of the log
-                                                   shift+g                     go to end of the log (and tail)
-                                                   e                           go to next error
-                                                   shift+e                     go to previous error
-                                                   w                           go to next warning
-                                                   shift+w                     go to previous warning
-                                                   space                       scroll down by one page
-                                                   b                           scroll up by one page</string>
-      </property>
-      <property name="textInteractionFlags">
-       <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QWidget" name="widget_2" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>20</height>
-       </size>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="TagLineEdit" name="lineEditFilter">
-         <property name="maximumSize">
-          <size>
-           <width>300</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QLineEdit {
-	placeholder-text-color: gray;
-}</string>
-         </property>
-         <property name="placeholderText">
-          <string>Filters</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="TagBar" name="filters" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>100</width>
-           <height>0</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="3" column="0">
+    <item row="4" column="0">
      <widget class="QWidget" name="widget_3" native="true">
       <widget class="QLabel" name="labelOnline">
        <property name="geometry">
@@ -475,6 +367,131 @@
       </widget>
      </widget>
     </item>
+    <item row="3" column="0">
+     <widget class="QWidget" name="widget_2" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>20</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="TagLineEdit" name="lineEditFilter">
+         <property name="maximumSize">
+          <size>
+           <width>300</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+	placeholder-text-color: gray;
+}</string>
+         </property>
+         <property name="placeholderText">
+          <string>Filters</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="TagBar" name="filters" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="LineNumberArea" name="lineNumberArea" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>20</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="LogTextEdit" name="plainTextEdit">
+        <property name="font">
+         <font>
+          <family>Consolas</family>
+         </font>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="plainText">
+         <string>
+
+
+                                                  ██╗      ██████╗  ██████╗ ███████╗██╗     ██╗   ██╗██╗  ██╗                                                    
+                                                  ██║     ██╔═══██╗██╔════╝ ██╔════╝██║     ██║   ██║╚██╗██╔╝
+                                                  ██║     ██║   ██║██║  ███╗█████╗  ██║     ██║   ██║ ╚███╔╝
+                                                  ██║     ██║   ██║██║   ██║██╔══╝  ██║     ██║   ██║ ██╔██╗
+                                                  ███████╗╚██████╔╝╚██████╔╝██║     ███████╗╚██████╔╝██╔╝ ██╗
+                                                  ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+
+
+                                                   Fast, searchable, filterable file and network log viewer
+                                                   
+                                                  Shortcuts:
+                                                   ctrl+f                      search the log
+                                                   enter (inside search)       go to next search result
+                                                   shift+enter (inside search) go to previous search result
+                                                   n (inside logview)          go to next search result   
+                                                   shift+n (inside logview)    go to previous search result
+                                                   g                           go to start of the log
+                                                   shift+g                     go to end of the log (and tail)
+                                                   e                           go to next error
+                                                   shift+e                     go to previous error
+                                                   w                           go to next warning
+                                                   shift+w                     go to previous warning
+                                                   space                       scroll down by one page
+                                                   b                           scroll up by one page</string>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -495,6 +512,17 @@
    <class>TagBar</class>
    <extends>QWidget</extends>
    <header>TagWidgets.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LogTextEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header>LogTextEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>LineNumberArea</class>
+   <extends>QWidget</extends>
+   <header>LineNumberArea.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

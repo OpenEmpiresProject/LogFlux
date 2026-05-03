@@ -36,6 +36,10 @@ set(PROJECT_SOURCES
     Settings.ui
     resources.qrc
     TagWidgets.h
+    LineNumberArea.h
+    LineNumberArea.cpp
+    LogTextEdit.h
+    LogTextEdit.cpp
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
