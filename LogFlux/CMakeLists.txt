@@ -35,6 +35,7 @@ set(PROJECT_SOURCES
     Settings.cpp
     Settings.ui
     resources.qrc
+    TagWidgets.h
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

@@ -250,7 +250,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>20</height>
+        <height>30</height>
        </size>
       </property>
       <property name="maximumSize">
@@ -273,27 +273,38 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
+        <widget class="TagLineEdit" name="lineEditFilter">
+         <property name="maximumSize">
+          <size>
+           <width>300</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLineEdit {
+	placeholder-text-color: gray;
+}</string>
+         </property>
+         <property name="placeholderText">
           <string>Filters</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_3"/>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
+        <widget class="TagBar" name="filters" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="sizeHint" stdset="0">
+         <property name="minimumSize">
           <size>
-           <width>40</width>
-           <height>20</height>
+           <width>100</width>
+           <height>0</height>
           </size>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -470,6 +481,17 @@
    <class>SearchLineEdit</class>
    <extends>QLineEdit</extends>
    <header>SearchLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TagLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>TagWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TagBar</class>
+   <extends>QWidget</extends>
+   <header>TagWidgets.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

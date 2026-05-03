@@ -14,6 +14,7 @@
 #include <QWidgetAction>
 #include <QShortcut>
 #include <QRegularExpression>
+#include <QCoreApplication>
 
 LogFlux::LogFlux(QWidget *parent)
     : QMainWindow(parent)
@@ -33,19 +34,20 @@ LogFlux::LogFlux(QWidget *parent)
 	setupShortcuts();
 	setupStatusBar();
 
-	QObject::connect(ui.btnClearLog, &QPushButton::clicked, this, &LogFlux::onClearLog);
-	QObject::connect(ui.btnReload, &QPushButton::clicked, this, &LogFlux::onRefreshLog);
-	QObject::connect(ui.btnBrowseFile, &QPushButton::clicked, this, &LogFlux::onAddFileSource);
-	QObject::connect(ui.btnSettings, &QPushButton::clicked, this, &LogFlux::launchSettingsWindow);
-	QObject::connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged,
-		this, &LogFlux::highlightCurrentLine);
-	QObject::connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged,
-		this, &LogFlux::updateSelections);
-	QObject::connect(ui.editSearch, &QLineEdit::textChanged, this, &LogFlux::highlightAllMatches);
-	QObject::connect(ui.btnSearchDown, &QPushButton::clicked, this, &LogFlux::findNext);
-	QObject::connect(ui.btnSearchUp, &QPushButton::clicked, this, &LogFlux::findPrevious);
-	QObject::connect(ui.radioServer, &QRadioButton::toggled, this, &LogFlux::onServerSelect);
-	QObject::connect(ui.radioFile, &QRadioButton::toggled, this, &LogFlux::onFileSelect);
+	connect(ui.btnClearLog, &QPushButton::clicked, this, &LogFlux::onClearLog);
+	connect(ui.btnReload, &QPushButton::clicked, this, &LogFlux::onRefreshLog);
+	connect(ui.btnBrowseFile, &QPushButton::clicked, this, &LogFlux::onAddFileSource);
+	connect(ui.btnSettings, &QPushButton::clicked, this, &LogFlux::launchSettingsWindow);
+	connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged, this, &LogFlux::highlightCurrentLine);
+	connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged, this, &LogFlux::updateSelections);
+	connect(ui.editSearch, &QLineEdit::textChanged, this, &LogFlux::highlightAllMatches);
+	connect(ui.btnSearchDown, &QPushButton::clicked, this, &LogFlux::findNext);
+	connect(ui.btnSearchUp, &QPushButton::clicked, this, &LogFlux::findPrevious);
+	connect(ui.radioServer, &QRadioButton::toggled, this, &LogFlux::onServerSelect);
+	connect(ui.radioFile, &QRadioButton::toggled, this, &LogFlux::onFileSelect);
+	connect(ui.filters, &TagBar::tagsChanged, this, &LogFlux::filtersChanged);
+	connect(ui.lineEditFilter, &TagLineEdit::tagEntered, ui.filters, &TagBar::addTag);
+	connect(ui.lineEditFilter, &TagLineEdit::backspaceOnEmpty, ui.filters, &TagBar::removeLastTag);
 
 	startServer("", 5000); // Start server, but file would be the default source
 }
@@ -106,6 +108,9 @@ void LogFlux::onClearLog()
 	ui.labelLineCount->setText("Lines: 0");
 	ui.labelErrorCount->setText("Errors: 0");
 	ui.labelWarningCount->setText("Warns: 0");
+
+	// clear the in-memory buffer of lines (document will be rebuilt from this buffer on filtering)
+	m_allLines.clear();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -177,37 +182,73 @@ void LogFlux::onFileSelect(bool selected)
 	}
 }
 
+QTextCharFormat LogFlux::formatForLine(const QString& line)
+{
+	QTextCharFormat fmt;
+	// classification with case-insensitive checks to keep color logic robust
+	if (line.contains("trace", Qt::CaseInsensitive) || line.contains("info", Qt::CaseInsensitive))
+	{
+		fmt.setForeground(QColor(80, 160, 255));  // softer bright blue
+	}
+	else if (line.contains("warn", Qt::CaseInsensitive))
+	{
+		fmt.setForeground(Qt::yellow);
+	}
+	else if (line.contains("error", Qt::CaseInsensitive))
+	{
+		fmt.setForeground(Qt::red);
+	}
+	else
+	{
+		fmt.setForeground(Qt::white);
+	}
+	return fmt;
+}
+
 void LogFlux::onNewLine(DataSource* source, const QString& line)
 {
 	// Data from different source than currently active, ignore
 	if (m_sources.value(m_currentSource, SourceData()).source != source)
 		return;
 
+	// keep a full buffer of all lines for the current view (used for filtering)
+	m_allLines.append(line);
+
 	auto& sourceData = m_sources[m_currentSource];
 	sourceData.lineCount++;
 	ui.labelLineCount->setText("Lines: " + QString::number(sourceData.lineCount));
 
-	QTextCharFormat fmt;
-	if (line.contains("trace") or line.contains("info"))
+	// update counts for warns/errors based on content (total counts remain even if filtered)
+	if (line.contains("warn", Qt::CaseInsensitive))
 	{
-		fmt.setForeground(QColor(80, 160, 255));  // softer bright blue
-	}
-	else if (line.contains("warn"))
-	{
-		fmt.setForeground(Qt::yellow);
 		sourceData.warnCount++;
 		ui.labelWarningCount->setText("Warns: " + QString::number(sourceData.warnCount));
 	}
-	else if (line.contains("error"))
+	else if (line.contains("error", Qt::CaseInsensitive))
 	{
-		fmt.setForeground(Qt::red);
 		sourceData.errorCount++;
 		ui.labelErrorCount->setText("Errors: " + QString::number(sourceData.errorCount));
 	}
-	else
+
+	// Decide whether to show the line depending on active filters (global, AND logic)
+	bool shouldShow = m_filters.isEmpty();
+	if (!shouldShow)
 	{
-		fmt.setForeground(Qt::white);
+		shouldShow = true;
+		for (const auto& f : m_filters)
+		{
+			if (!line.contains(f, Qt::CaseInsensitive))
+			{
+				shouldShow = false;
+				break;
+			}
+		}
 	}
+
+	if (!shouldShow)
+		return;
+
+	QTextCharFormat fmt = formatForLine(line);
 
 	bool atEnd = ui.plainTextEdit->textCursor().atEnd();
 	
@@ -306,6 +347,44 @@ void LogFlux::highlightAllMatches(const QString& text)
 
 	updateSelections();
 	updateSearchCount();
+}
+
+void LogFlux::filtersChanged(const QStringList& filters)
+{
+	// store active filters (global, case-insensitive matching below)
+	m_filters = filters;
+
+	// rebuild visible document from the buffered lines
+	ui.plainTextEdit->clear();
+
+	// Re-insert only lines matching all filters (AND). If no filters, show everything.
+	for (const auto& line : m_allLines)
+	{
+		bool matches = true;
+		for (const auto& f : m_filters)
+		{
+			if (!line.contains(f, Qt::CaseInsensitive))
+			{
+				matches = false;
+				break;
+			}
+		}
+
+		if (m_filters.isEmpty() || matches)
+		{
+			QTextCharFormat fmt = formatForLine(line);
+
+			QTextCursor insertCursor(ui.plainTextEdit->document());
+			insertCursor.movePosition(QTextCursor::End);
+			insertCursor.insertText(line + "\n", fmt);
+		}
+	}
+
+	// Update search highlights (if any search text active)
+	if (!m_searchText.isEmpty())
+		highlightAllMatches(m_searchText);
+	else
+		updateSelections();
 }
 
 void LogFlux::updateSelections()
@@ -630,17 +709,34 @@ void LogFlux::destroyExistingSource(SourceType type)
 	{
 		auto sourceData = m_sources[type];
 
-		// ensure worker deleted in its own thread, otherwise a crash
-		connect(sourceData.thread, &QThread::finished,
-			sourceData.source, &QObject::deleteLater);
+		// Move the source back to the main thread so deletion happens on the GUI thread's event loop.
+		// If the object is left in a worker thread whose event loop stops, deleteLater() won't run and
+		// the object can be left in an invalid state.
+		if (sourceData.source)
+		{
+			QThread* mainThread = QCoreApplication::instance()->thread();
+			sourceData.source->moveToThread(mainThread);
+		}
 
+		// Ensure the QThread object is deleted after it finishes.
+		connect(sourceData.thread, &QThread::finished,
+			sourceData.thread, &QObject::deleteLater);
+
+		// Tell the worker thread to stop and wait for it.
 		sourceData.thread->quit();
 		sourceData.thread->wait(); // Wait indefinitely 
 
+		// signalDelagator was created on the main thread; delete it directly.
 		delete sourceData.signalDelagator;
+		sourceData.signalDelagator = nullptr;
 
-		sourceData.thread->deleteLater();
+		// Now the source object can be safely deleted on the main (GUI) thread.
+		if (sourceData.source)
+		{
+			sourceData.source->deleteLater();
+		}
 
+		// Remove from map
 		m_sources.remove(type);
 	}
 }

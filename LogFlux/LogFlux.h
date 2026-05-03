@@ -65,6 +65,12 @@ private:
 	QList<QTextEdit::ExtraSelection> m_searchSelections;
 	QTextCursor m_currentMatch;
 
+	// Filtering
+	QList<QString> m_filters;        // active filters (global, case-insensitive)
+	QList<QString> m_allLines;       // full buffer of lines currently shown (cleared on onClearLog)
+
+	QTextCharFormat formatForLine(const QString& line);
+
 	void startServer(const QString& host, int port);
 	void updateSelections();
 	void updateSearchCount();
@@ -96,6 +102,7 @@ private slots:
 	void findPrevious();
 	bool eventFilter(QObject* obj, QEvent* event);
 	void launchSettingsWindow();
+	void filtersChanged(const QStringList& filters);
 
 signals:
 	void sourceStatusChange(SourceType type, DataSource* source, bool online);
