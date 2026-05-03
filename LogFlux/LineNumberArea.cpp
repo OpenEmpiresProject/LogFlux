@@ -50,7 +50,7 @@ void LineNumberArea::paintEvent(QPaintEvent* event)
 		return;
 
 	QPainter painter(this);
-	painter.fillRect(event->rect(), QColor(30, 30, 30));
+	painter.fillRect(event->rect(), QColor(45, 45, 45));
 
 	QTextBlock block = m_editor->getFirstVisibleBlock();
 	int blockNumber = block.blockNumber();

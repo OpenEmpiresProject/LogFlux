@@ -15,6 +15,7 @@
 #include <QShortcut>
 #include <QRegularExpression>
 #include <QCoreApplication>
+#include <algorithm>
 
 LogFlux::LogFlux(QWidget *parent)
     : QMainWindow(parent)
@@ -31,6 +32,8 @@ LogFlux::LogFlux(QWidget *parent)
 	// To detect pressing Shift while pressing enter to go to previous search result
 	ui.editSearch->installEventFilter(this);
 
+	ui.bookmarkBar->setBookmarkIcon(QPixmap(":/images/bookmark.png"));
+	ui.bookmarkBar->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
 	ui.lineNumberArea->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
 
 	setupShortcuts();
@@ -647,6 +650,90 @@ void LogFlux::updateSearchCount()
 	}
 }
 
+void LogFlux::addBookmark()
+{
+	// Toggle bookmark at the current block (line)
+	QTextCursor cur = ui.plainTextEdit->textCursor();
+	int blockNumber = cur.block().blockNumber();
+	ui.bookmarkBar->toggleBookmark(blockNumber);
+}
+
+void LogFlux::goToNextBookmark()
+{
+	auto set = ui.bookmarkBar->bookmarks();
+	if (set.isEmpty())
+		return;
+
+	QList<int> list = set.values();
+	std::sort(list.begin(), list.end());
+
+	QTextCursor cur = ui.plainTextEdit->textCursor();
+	int currentBlock = cur.block().blockNumber();
+
+	// find first bookmark strictly greater than current
+	int target = -1;
+	for (int b : list)
+	{
+		if (b > currentBlock)
+		{
+			target = b;
+			break;
+		}
+	}
+
+	// wrap to the first if none found
+	if (target == -1)
+		target = list.first();
+
+	QTextBlock tb = ui.plainTextEdit->document()->findBlockByNumber(target);
+	if (!tb.isValid())
+		return;
+
+	QTextCursor c(tb);
+	c.movePosition(QTextCursor::StartOfBlock);
+	ui.plainTextEdit->setTextCursor(c);
+	ui.plainTextEdit->centerCursor();
+	ensureCursorVisibleOnlyIfNeeded(c);
+}
+
+void LogFlux::goToPreviousBookmark()
+{
+	auto set = ui.bookmarkBar->bookmarks();
+	if (set.isEmpty())
+		return;
+
+	QList<int> list = set.values();
+	std::sort(list.begin(), list.end());
+
+	QTextCursor cur = ui.plainTextEdit->textCursor();
+	int currentBlock = cur.block().blockNumber();
+
+	// find last bookmark strictly less than current
+	int target = -1;
+	for (int i = list.size() - 1; i >= 0; --i)
+	{
+		if (list[i] < currentBlock)
+		{
+			target = list[i];
+			break;
+		}
+	}
+
+	// wrap to the last if none found
+	if (target == -1)
+		target = list.last();
+
+	QTextBlock tb = ui.plainTextEdit->document()->findBlockByNumber(target);
+	if (!tb.isValid())
+		return;
+
+	QTextCursor c(tb);
+	c.movePosition(QTextCursor::StartOfBlock);
+	ui.plainTextEdit->setTextCursor(c);
+	ui.plainTextEdit->centerCursor();
+	ensureCursorVisibleOnlyIfNeeded(c);
+}
+
 void LogFlux::setupShortcuts()
 {
 	new QShortcut(QKeySequence::Find, this, [this]()
@@ -685,7 +772,7 @@ void LogFlux::setupShortcuts()
 			goToPreviousWarning();
 		});
 
-	// Page forward: space -> scroll forward one window (page)
+	// Scroll forward one window (page)
 	new QShortcut(Qt::Key_Space, this, [this]()
 		{
 			QScrollBar* sb = ui.plainTextEdit->verticalScrollBar();
@@ -693,15 +780,14 @@ void LogFlux::setupShortcuts()
 				sb->setValue(sb->value() + sb->pageStep());
 		});
 
-	// Page backward: 'b' -> scroll backward one window (page)
-	new QShortcut(Qt::Key_B, this, [this]()
+	// Scroll backward one window (page)
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Space), this, [this]()
 		{
 			QScrollBar* sb = ui.plainTextEdit->verticalScrollBar();
 			if (sb)
 				sb->setValue(sb->value() - sb->pageStep());
 		});
 
-	// Search navigation: 'n' -> next match, 'N' (Shift+n) -> previous match
 	new QShortcut(Qt::Key_N, this, [this]()
 		{
 			findNext();
@@ -710,6 +796,22 @@ void LogFlux::setupShortcuts()
 	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_N), this, [this]()
 		{
 			findPrevious();
+		});
+
+	// Bookmarks:
+	new QShortcut(Qt::Key_M, this, [this]()
+		{
+			addBookmark();
+		});
+
+	new QShortcut(Qt::Key_B, this, [this]()
+		{
+			goToNextBookmark();
+		});
+
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_B), this, [this]()
+		{
+			goToPreviousBookmark();
 		});
 }
 

@@ -40,6 +40,8 @@ set(PROJECT_SOURCES
     LineNumberArea.cpp
     LogTextEdit.h
     LogTextEdit.cpp
+    BookmarkArea.h
+    BookmarkArea.cpp
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

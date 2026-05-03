@@ -88,6 +88,11 @@ private:
 	void destroyExistingSource(SourceType type);
 	void addNewSource(SourceType type, DataSource* source);
 
+	// Bookmarks
+	void addBookmark();
+	void goToNextBookmark();
+	void goToPreviousBookmark();
+
 private slots:
 	void onAddFileSource();
 	void onClearLog();

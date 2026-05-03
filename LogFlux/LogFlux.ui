@@ -447,6 +447,16 @@
        </widget>
       </item>
       <item>
+       <widget class="BookmarkArea" name="bookmarkBar" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>15</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="LogTextEdit" name="plainTextEdit">
         <property name="font">
          <font>
@@ -470,20 +480,15 @@
 
                                                    Fast, searchable, filterable file and network log viewer
                                                    
-                                                  Shortcuts:
-                                                   ctrl+f                      search the log
-                                                   enter (inside search)       go to next search result
-                                                   shift+enter (inside search) go to previous search result
-                                                   n (inside logview)          go to next search result   
-                                                   shift+n (inside logview)    go to previous search result
-                                                   g                           go to start of the log
-                                                   shift+g                     go to end of the log (and tail)
-                                                   e                           go to next error
-                                                   shift+e                     go to previous error
-                                                   w                           go to next warning
-                                                   shift+w                     go to previous warning
-                                                   space                       scroll down by one page
-                                                   b                           scroll up by one page</string>
+                                                                         Shortcuts:
+                            ctrl+f                      search the log                         shift+e            go to previous error
+                            enter (inside search)       go to next search result               w                  go to next warning
+                            shift+enter (inside search) go to previous search result           shift+w            go to previous warning
+                            n (inside logview)          go to next search result               space              scroll down by one page
+                            shift+n (inside logview)    go to previous search result           shift+space        scroll up by one page
+                            g                           go to start of the log                 m                  bookmark current line
+                            shift+g                     go to end of the log (and tail)        b                  go to next bookmark
+                            e                           go to next error                       shift+b            go to previous bookmark</string>
         </property>
         <property name="textInteractionFlags">
          <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -523,6 +528,12 @@
    <class>LineNumberArea</class>
    <extends>QWidget</extends>
    <header>LineNumberArea.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BookmarkArea</class>
+   <extends>QWidget</extends>
+   <header>BookmarkArea.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
