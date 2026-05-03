@@ -682,6 +682,33 @@ void LogFlux::setupShortcuts()
 		{
 			goToPreviousWarning();
 		});
+
+	// Page forward: space -> scroll forward one window (page)
+	new QShortcut(Qt::Key_Space, this, [this]()
+		{
+			QScrollBar* sb = ui.plainTextEdit->verticalScrollBar();
+			if (sb)
+				sb->setValue(sb->value() + sb->pageStep());
+		});
+
+	// Page backward: 'b' -> scroll backward one window (page)
+	new QShortcut(Qt::Key_B, this, [this]()
+		{
+			QScrollBar* sb = ui.plainTextEdit->verticalScrollBar();
+			if (sb)
+				sb->setValue(sb->value() - sb->pageStep());
+		});
+
+	// Search navigation: 'n' -> next match, 'N' (Shift+n) -> previous match
+	new QShortcut(Qt::Key_N, this, [this]()
+		{
+			findNext();
+		});
+
+	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_N), this, [this]()
+		{
+			findPrevious();
+		});
 }
 
 void LogFlux::setupStatusBar()

@@ -230,15 +230,19 @@
                                                    Fast, searchable, filterable file and network log viewer
                                                    
                                                   Shortcuts:
-                                                   ctrl+f                    search the log
-                                                   enter (while searching)   go to next search result
-                                                   shift+enter               go to previous search result
-                                                   g                         go to start of the log
-                                                   shift+g                   go to end of the log (and tail)
-                                                   e                         go to next error
-                                                   shift+e                   go to previous error
-                                                   w                         go to next warning
-                                                   shift+w                   go to previous warning</string>
+                                                   ctrl+f                      search the log
+                                                   enter (inside search)       go to next search result
+                                                   shift+enter (inside search) go to previous search result
+                                                   n (inside logview)          go to next search result   
+                                                   shift+n (inside logview)    go to previous search result
+                                                   g                           go to start of the log
+                                                   shift+g                     go to end of the log (and tail)
+                                                   e                           go to next error
+                                                   shift+e                     go to previous error
+                                                   w                           go to next warning
+                                                   shift+w                     go to previous warning
+                                                   space                       scroll down by one page
+                                                   b                           scroll up by one page</string>
       </property>
       <property name="textInteractionFlags">
        <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
