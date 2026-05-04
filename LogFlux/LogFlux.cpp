@@ -2,6 +2,7 @@
 #include "FileSource.h"
 #include "ServerSource.h"
 #include "Settings.h"
+#include "MiniMap.h"
 
 #include <QFileDialog>
 #include <QDebug>
@@ -34,7 +35,11 @@ LogFlux::LogFlux(QWidget *parent)
 
 	ui.bookmarkBar->setBookmarkIcon(QPixmap(":/images/bookmark.png"));
 	ui.bookmarkBar->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
-	ui.lineNumberArea->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
+	ui.lineNumberArea->setEditor(ui.plainTextEdit);
+	ui.scrollbarMinimap->setEditor(ui.plainTextEdit);
+	
+	// Hide default scrollbar in favour of minimap scrollbar
+	ui.plainTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 	setupShortcuts();
 	setupStatusBar();
@@ -53,7 +58,8 @@ LogFlux::LogFlux(QWidget *parent)
 	connect(ui.filters, &TagBar::tagsChanged, this, &LogFlux::filtersChanged);
 	connect(ui.lineEditFilter, &TagLineEdit::tagEntered, ui.filters, &TagBar::addTag);
 	connect(ui.lineEditFilter, &TagLineEdit::backspaceOnEmpty, ui.filters, &TagBar::removeLastTag);
-
+	// Keep minimap in sync with bookmark changes (bookmarks can change anytime)
+	connect(ui.bookmarkBar, &BookmarkArea::bookmarkToggled, ui.scrollbarMinimap, &MiniMap::setBookmark);
 	startServer("", 5000); // Start server, but file would be the default source
 }
 
@@ -262,10 +268,22 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	insertCursor.movePosition(QTextCursor::End);
 	insertCursor.insertText(line + "\n", fmt);
 
-	if (atEnd)
+	// If the inserted line is visible, add a minimap marker for warn/error.
+	// The new block will be the last block in the document.
+	int blockNumber = ui.plainTextEdit->document()->blockCount() - 1;
+	if (line.contains("warn", Qt::CaseInsensitive))
 	{
-		ui.plainTextEdit->moveCursor(QTextCursor::End);
+		ui.scrollbarMinimap->addMarker(blockNumber, MiniMap::Warning);
 	}
+	else if (line.contains("error", Qt::CaseInsensitive))
+	{
+		ui.scrollbarMinimap->addMarker(blockNumber, MiniMap::Error);
+	}
+
+ 	if (atEnd)
+ 	{
+ 		ui.plainTextEdit->moveCursor(QTextCursor::End);
+ 	}
 }
 
 void LogFlux::onSourceStatusChange(DataSource* source, bool online)
@@ -362,6 +380,9 @@ void LogFlux::filtersChanged(const QStringList& filters)
 	// rebuild visible document from the buffered lines
 	ui.plainTextEdit->clear();
 
+	// We'll collect markers for the minimap while rebuilding the visible document.
+	QVector<MiniMap::Marker> markers;
+
 	// Re-insert only lines matching all filters (AND). If no filters, show everything.
 	for (const auto& line : m_allLines)
 	{
@@ -382,8 +403,26 @@ void LogFlux::filtersChanged(const QStringList& filters)
 			QTextCursor insertCursor(ui.plainTextEdit->document());
 			insertCursor.movePosition(QTextCursor::End);
 			insertCursor.insertText(line + "\n", fmt);
+			// If this visible line contains warn/error, prepare a marker.
+			int blockNumber = ui.plainTextEdit->document()->blockCount() - 1;
+			if (line.contains("warn", Qt::CaseInsensitive))
+			{
+				markers.append({ blockNumber, MiniMap::Warning });
+			}
+			else if (line.contains("error", Qt::CaseInsensitive))
+			{
+				markers.append({ blockNumber, MiniMap::Error });
+			}
 		}
 	}
+
+	// Merge bookmarks (current bookmark positions are based on the current editor)
+	auto bset = ui.bookmarkBar->bookmarks();
+	for (int b : bset)
+		markers.append({ b, MiniMap::Bookmark });
+
+	// Set new marker set for the minimap in one operation (efficient).
+	ui.scrollbarMinimap->setMarkers(markers);
 
 	// Update search highlights (if any search text active)
 	if (!m_searchText.isEmpty())

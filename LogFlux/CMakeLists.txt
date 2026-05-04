@@ -42,6 +42,8 @@ set(PROJECT_SOURCES
     LogTextEdit.cpp
     BookmarkArea.h
     BookmarkArea.cpp
+    MiniMap.h
+    MiniMap.cpp
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
