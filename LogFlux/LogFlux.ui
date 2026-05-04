@@ -395,6 +395,16 @@
         <number>0</number>
        </property>
        <item>
+        <widget class="QCheckBox" name="checkBoxFilters">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="TagLineEdit" name="lineEditFilter">
          <property name="maximumSize">
           <size>
@@ -405,6 +415,11 @@
          <property name="styleSheet">
           <string notr="true">QLineEdit {
 	placeholder-text-color: gray;
+}
+
+QLineEdit:disabled {
+    color: rgba(220, 220, 220, 80);
+    placeholder-text-color: rgba(200, 200, 200, 60);   /* darker via transparency */
 }</string>
          </property>
          <property name="placeholderText">
@@ -570,6 +585,38 @@
     <hint type="destinationlabel">
      <x>317</x>
      <y>14</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxFilters</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>filters</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>15</x>
+     <y>485</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>724</x>
+     <y>485</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxFilters</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lineEditFilter</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>15</x>
+     <y>485</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>178</x>
+     <y>485</y>
     </hint>
    </hints>
   </connection>

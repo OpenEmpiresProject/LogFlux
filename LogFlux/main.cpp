@@ -55,6 +55,18 @@ int main(int argc, char *argv[])
 	darkPalette.setColor(QPalette::BrightText, Qt::red);
 	darkPalette.setColor(QPalette::Highlight, QColor(142, 45, 197));
 	darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+
+	// Explicitly set the Disabled color group so disabled widgets look "grayed"
+	darkPalette.setColor(QPalette::Disabled, QPalette::Window, QColor(53, 53, 53));
+	darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(120, 120, 120));
+	darkPalette.setColor(QPalette::Disabled, QPalette::Base, QColor(30, 30, 30));
+	darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(110, 110, 110));
+	darkPalette.setColor(QPalette::Disabled, QPalette::Button, QColor(53, 53, 53));
+	darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(120, 120, 120));
+	darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
+	darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(130, 130, 130));
+
+
 	app.setPalette(darkPalette);
 	app.setStyle(QStyleFactory::create("Fusion"));
 

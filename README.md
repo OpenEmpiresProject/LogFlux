@@ -5,6 +5,7 @@ Network and File log viewer
 LogFlux is a lightweight desktop application for viewing and following log data from local files and network sources in real time. It is implemented in modern C++ with a Qt-based user interface and focuses on fast navigation, searching with jump-to-result, auto-follow (tail) mode, and a compact keyboard-friendly UI.
 
 ![Screenshot](doc/screenshot_1.png)
+![Screenshot](doc/screenshot_2.png)
 
 ## Technology & Dependencies
 LogFlux is built using the following technologies:
@@ -31,14 +32,14 @@ python tests/send_logs.py
 - Log level based text coloring.
 - Jumping to log start and end with `less` sort of shortcuts
 - Keyboard navigations (navigating between lines, jumping to start/end of the log)
-
-## Planned Features
 - Filters.
-- Ability to select case sensitivity, whole word and regex for searching.
-- Shortcuts for jumping between errors and warnings.
-- Minimap based scrolling.
 - Bookmark support.
-- Stats like total lines, errors, and warnings.
+- Stats; total lines, errors, and warnings.
+- Minimap based scrolling.
+- Shortcuts for jumping between errors and warnings.
+- 
+## Planned Features
+- Ability to select case sensitivity, whole word and regex for searching.
 - Support drag and drop of files.
 
 ## Usage

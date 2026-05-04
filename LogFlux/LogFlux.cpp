@@ -60,6 +60,8 @@ LogFlux::LogFlux(QWidget *parent)
 	connect(ui.lineEditFilter, &TagLineEdit::backspaceOnEmpty, ui.filters, &TagBar::removeLastTag);
 	// Keep minimap in sync with bookmark changes (bookmarks can change anytime)
 	connect(ui.bookmarkBar, &BookmarkArea::bookmarkToggled, ui.scrollbarMinimap, &MiniMap::setBookmark);
+	connect(ui.checkBoxFilters, &QCheckBox::toggled, this, &LogFlux::filtersEnabled);
+
 	startServer("", 5000); // Start server, but file would be the default source
 }
 
@@ -429,6 +431,19 @@ void LogFlux::filtersChanged(const QStringList& filters)
 		highlightAllMatches(m_searchText);
 	else
 		updateSelections();
+}
+
+void LogFlux::filtersEnabled(bool enabled)
+{
+	if (enabled)
+	{
+		filtersChanged(m_filtersBackup);
+	}
+	else
+	{
+		m_filtersBackup = m_filters;
+		filtersChanged({});
+	}
 }
 
 void LogFlux::updateSelections()

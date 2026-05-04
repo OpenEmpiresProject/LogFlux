@@ -67,6 +67,7 @@ private:
 
 	// Filtering
 	QList<QString> m_filters;        // active filters (global, case-insensitive)
+	QList<QString> m_filtersBackup;
 	QList<QString> m_allLines;       // full buffer of lines currently shown (cleared on onClearLog)
 
 	QTextCharFormat formatForLine(const QString& line);
@@ -108,6 +109,7 @@ private slots:
 	bool eventFilter(QObject* obj, QEvent* event);
 	void launchSettingsWindow();
 	void filtersChanged(const QStringList& filters);
+	void filtersEnabled(bool enabled);
 
 signals:
 	void sourceStatusChange(SourceType type, DataSource* source, bool online);

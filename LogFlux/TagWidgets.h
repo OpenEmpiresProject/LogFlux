@@ -184,18 +184,50 @@ private:
 	void refreshStyle()
 	{
 		const QPalette& pal = palette();
+
+		const QColor textColor = pal.color(QPalette::WindowText);
+		const QColor secondaryColor = pal.color(QPalette::PlaceholderText);
+
+		const QColor disabledText = pal.color(QPalette::Disabled, QPalette::WindowText);
+		const QColor disabledSecondary = pal.color(QPalette::Disabled, QPalette::PlaceholderText);
+
 		m_label->setStyleSheet(
-			QString("QLabel { color: %1; font-size: 13px; background: transparent; }")
-			.arg(pal.color(QPalette::WindowText).name()));
+			QString(R"(
+            QLabel {
+                color: %1;
+                font-size: 13px;
+                background: transparent;
+            }
+            QLabel:disabled {
+                color: %2;
+            }
+        )")
+			.arg(textColor.name())
+			.arg(disabledText.name())
+		);
+
 		m_close->setStyleSheet(
 			QString(R"(
-                QToolButton { color: %1; background: transparent; border: none;
-                              font-size: 15px; line-height: 16px;
-                              padding: 0; margin: 0 0 2px 0; }
-                QToolButton:hover { color: %2; }
-            )")
-			.arg(pal.color(QPalette::PlaceholderText).name())
-			.arg(pal.color(QPalette::WindowText).name()));
+            QToolButton {
+                color: %1;
+                background: transparent;
+                border: none;
+                font-size: 15px;
+                line-height: 16px;
+                padding: 0;
+                margin: 0 0 2px 0;
+            }
+            QToolButton:hover {
+                color: %2;
+            }
+            QToolButton:disabled {
+                color: %3;
+            }
+        )")
+			.arg(secondaryColor.name())     // normal (subtle)
+			.arg(textColor.name())          // hover (strong)
+			.arg(disabledSecondary.name())  // disabled (faded)
+		);
 	}
 
 	QLabel* m_label = nullptr;
