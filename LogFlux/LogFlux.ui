@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1124</width>
-    <height>531</height>
+    <width>1061</width>
+    <height>536</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -204,6 +204,82 @@
        </item>
       </layout>
      </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="LineNumberArea" name="lineNumberArea" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>20</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="BookmarkArea" name="bookmarkBar" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>15</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="LogTextEdit" name="plainTextEdit">
+        <property name="font">
+         <font>
+          <family>Consolas</family>
+         </font>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="plainText">
+         <string>
+
+
+                                          ██╗      ██████╗  ██████╗ ███████╗██╗     ██╗   ██╗██╗  ██╗                                                    
+                                          ██║     ██╔═══██╗██╔════╝ ██╔════╝██║     ██║   ██║╚██╗██╔╝
+                                          ██║     ██║   ██║██║  ███╗█████╗  ██║     ██║   ██║ ╚███╔╝
+                                          ██║     ██║   ██║██║   ██║██╔══╝  ██║     ██║   ██║ ██╔██╗
+                                          ███████╗╚██████╔╝╚██████╔╝██║     ███████╗╚██████╔╝██╔╝ ██╗
+                                          ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+
+
+                                           Fast, searchable, filterable file and network log viewer
+                                           
+                                                                 Shortcuts:
+                    ctrl+f                      search the log                         shift+e            go to previous error
+                    enter (inside search)       go to next search result               w                  go to next warning
+                    shift+enter (inside search) go to previous search result           shift+w            go to previous warning
+                    n (inside logview)          go to next search result               space              scroll down by one page
+                    shift+n (inside logview)    go to previous search result           shift+space        scroll up by one page
+                    g                           go to start of the log                 m                  bookmark current line
+                    shift+g                     go to end of the log (and tail)        b                  go to next bookmark
+                    e                           go to next error                       shift+b            go to previous bookmark</string>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="MiniMap" name="scrollbarMinimap" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>30</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item row="4" column="0">
      <widget class="QWidget" name="widget_3" native="true">
@@ -443,84 +519,37 @@ QLineEdit:disabled {
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Quick Filters</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBoxErrors">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="resources.qrc">
+           <normaloff>:/images/error.png</normaloff>:/images/error.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBoxWarnings">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="resources.qrc">
+           <normaloff>:/images/warning.png</normaloff>:/images/warning.png</iconset>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-    </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="LineNumberArea" name="lineNumberArea" native="true">
-        <property name="minimumSize">
-         <size>
-          <width>20</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="BookmarkArea" name="bookmarkBar" native="true">
-        <property name="minimumSize">
-         <size>
-          <width>15</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="LogTextEdit" name="plainTextEdit">
-        <property name="font">
-         <font>
-          <family>Consolas</family>
-         </font>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-        <property name="plainText">
-         <string>
-
-
-                                                  ██╗      ██████╗  ██████╗ ███████╗██╗     ██╗   ██╗██╗  ██╗                                                    
-                                                  ██║     ██╔═══██╗██╔════╝ ██╔════╝██║     ██║   ██║╚██╗██╔╝
-                                                  ██║     ██║   ██║██║  ███╗█████╗  ██║     ██║   ██║ ╚███╔╝
-                                                  ██║     ██║   ██║██║   ██║██╔══╝  ██║     ██║   ██║ ██╔██╗
-                                                  ███████╗╚██████╔╝╚██████╔╝██║     ███████╗╚██████╔╝██╔╝ ██╗
-                                                  ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-
-
-                                                   Fast, searchable, filterable file and network log viewer
-                                                   
-                                                                         Shortcuts:
-                            ctrl+f                      search the log                         shift+e            go to previous error
-                            enter (inside search)       go to next search result               w                  go to next warning
-                            shift+enter (inside search) go to previous search result           shift+w            go to previous warning
-                            n (inside logview)          go to next search result               space              scroll down by one page
-                            shift+n (inside logview)    go to previous search result           shift+space        scroll up by one page
-                            g                           go to start of the log                 m                  bookmark current line
-                            shift+g                     go to end of the log (and tail)        b                  go to next bookmark
-                            e                           go to next error                       shift+b            go to previous bookmark</string>
-        </property>
-        <property name="textInteractionFlags">
-         <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="MiniMap" name="scrollbarMinimap" native="true">
-        <property name="minimumSize">
-         <size>
-          <width>30</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
    </layout>
   </widget>

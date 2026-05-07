@@ -62,6 +62,8 @@ LogFlux::LogFlux(QWidget *parent)
 	// Keep minimap in sync with bookmark changes (bookmarks can change anytime)
 	connect(ui.bookmarkBar, &BookmarkArea::bookmarkToggled, ui.scrollbarMinimap, &MiniMap::setBookmark);
 	connect(ui.checkBoxFilters, &QCheckBox::toggled, this, &LogFlux::filtersEnabled);
+	connect(ui.checkBoxErrors, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
+	connect(ui.checkBoxWarnings, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
 
 	startServer("", 5000); // Start server, but file would be the default source
 }
@@ -253,16 +255,33 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	// Decide whether to show the line depending on active filters:
 	// - across tags: AND (every tag must match)
 	// - within a tag: OR (handled by filter object)
-	bool shouldShow = m_filterObjects.empty();
-	if (!shouldShow)
+	bool shouldShow = false;
+
+	if (m_useQuickFilters)
 	{
-		shouldShow = true;
-		for (const auto& f : m_filterObjects)
+		// Quick filters: OR semantics between error/warning checkboxes.
+		const bool wantError = ui.checkBoxErrors->isChecked();
+		const bool wantWarn = ui.checkBoxWarnings->isChecked();
+
+		if (wantError && line.contains("error", Qt::CaseInsensitive))
+			shouldShow = true;
+		if (wantWarn && line.contains("warn", Qt::CaseInsensitive))
+			shouldShow = true;
+	}
+	else
+	{
+		// existing normal filters behavior
+		shouldShow = m_filterObjects.empty();
+		if (!shouldShow)
 		{
-			if (!f || !f->matches(line))
+			shouldShow = true;
+			for (const auto& f : m_filterObjects)
 			{
-				shouldShow = false;
-				break;
+				if (!f || !f->matches(line))
+				{
+					shouldShow = false;
+					break;
+				}
 			}
 		}
 	}
@@ -453,10 +472,29 @@ void LogFlux::filtersEnabled(bool enabled)
 {
 	if (enabled)
 	{
+		// When user re-enables normal filters, we must stop using quick filters
+		// and clear quick-filter checkboxes.
+		if (m_useQuickFilters)
+		{
+			// prevent quick filter handlers from running while we clear UI
+			ui.checkBoxErrors->blockSignals(true);
+			ui.checkBoxWarnings->blockSignals(true);
+
+			ui.checkBoxErrors->setChecked(false);
+			ui.checkBoxWarnings->setChecked(false);
+
+			ui.checkBoxErrors->blockSignals(false);
+			ui.checkBoxWarnings->blockSignals(false);
+
+			m_useQuickFilters = false;
+		}
+
+		// Restore previous filters
 		filtersChanged(m_filtersBackup);
 	}
 	else
 	{
+		// disable normal filters but keep them backed up
 		m_filtersBackup = m_filters;
 		filtersChanged({});
 	}
@@ -939,5 +977,92 @@ void LogFlux::destroyExistingSource(SourceType type)
 
 		// Remove from map
 		m_sources.remove(type);
+	}
+}
+
+// Apply quick filters (error/warning OR) by rebuilding the visible document from the buffered lines.
+void LogFlux::applyQuickFilters()
+{
+	ui.plainTextEdit->clear();
+
+	QVector<MiniMap::Marker> markers;
+
+	const bool wantError = ui.checkBoxErrors->isChecked();
+	const bool wantWarn = ui.checkBoxWarnings->isChecked();
+
+	for (const auto& line : m_allLines)
+	{
+		bool show = false;
+		if (wantError && line.contains("error", Qt::CaseInsensitive))
+			show = true;
+		if (wantWarn && line.contains("warn", Qt::CaseInsensitive))
+			show = true;
+
+		if (!show)
+			continue;
+
+		QTextCharFormat fmt = formatForLine(line);
+
+		QTextCursor insertCursor(ui.plainTextEdit->document());
+		insertCursor.movePosition(QTextCursor::End);
+		insertCursor.insertText(line + "\n", fmt);
+
+		int blockNumber = ui.plainTextEdit->document()->blockCount() - 1;
+		if (line.contains("warn", Qt::CaseInsensitive))
+		{
+			markers.append({ blockNumber, MiniMap::Warning });
+		}
+		else if (line.contains("error", Qt::CaseInsensitive))
+		{
+			markers.append({ blockNumber, MiniMap::Error });
+		}
+	}
+
+	// Merge bookmarks
+	auto bset = ui.bookmarkBar->bookmarks();
+	for (int b : bset)
+		markers.append({ b, MiniMap::Bookmark });
+
+	ui.scrollbarMinimap->setMarkers(markers);
+
+	// Update search highlights (if any search text active)
+	if (!m_searchText.isEmpty())
+		highlightAllMatches(m_searchText);
+	else
+		updateSelections();
+}
+
+// Called when either quick-filter checkbox changes state.
+void LogFlux::onQuickFiltersChanged(bool /*checked*/)
+{
+	const bool err = ui.checkBoxErrors->isChecked();
+	const bool warn = ui.checkBoxWarnings->isChecked();
+
+	// If any quick filter is selected, disable normal filters (uncheck checkBoxFilters)
+	// and switch to quick filter mode.
+	if (err || warn)
+	{
+		// Uncheck normal filters if enabled. This will call filtersEnabled(false) and
+		// backup the current filters.
+		if (ui.checkBoxFilters->isChecked())
+		{
+			// Allow filtersEnabled(false) to run (don't block), it will call filtersChanged({})
+			ui.checkBoxFilters->setChecked(false);
+		}
+
+		m_useQuickFilters = true;
+		applyQuickFilters();
+	}
+	else
+	{
+		// No quick filters selected anymore: stop using quick filters and show everything
+		// according to the current normal-filter state (which is currently disabled).
+		if (m_useQuickFilters)
+		{
+			m_useQuickFilters = false;
+			// Rebuild view with no normal filters (filters were disabled when quick filters were activated).
+			// Keep current m_filters empty; just call filtersChanged({}) so logic is consistent.
+			filtersChanged({});
+		}
 	}
 }

@@ -77,6 +77,9 @@ private:
 
 	std::vector<std::shared_ptr<IFilter>> m_filterObjects;
 
+	// When true, quick filters are used instead of m_filterObjects (normal filters).
+	bool m_useQuickFilters = false;
+
 	QTextCharFormat formatForLine(const QString& line);
 
 	void startServer(const QString& host, int port);
@@ -104,6 +107,9 @@ private:
 	// Build compiled filter objects from the current m_filters list.
 	void rebuildFilterObjects();
 
+	// Apply quick filters to the currently buffered lines and rebuild view.
+	void applyQuickFilters();
+
 private slots:
 	void onAddFileSource();
 	void onClearLog();
@@ -120,6 +126,7 @@ private slots:
 	void launchSettingsWindow();
 	void filtersChanged(const QStringList& filters);
 	void filtersEnabled(bool enabled);
+	void onQuickFiltersChanged(bool checked);
 
 signals:
 	void sourceStatusChange(SourceType type, DataSource* source, bool online);
