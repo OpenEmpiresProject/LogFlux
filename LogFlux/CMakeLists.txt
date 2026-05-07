@@ -44,6 +44,8 @@ set(PROJECT_SOURCES
     BookmarkArea.cpp
     MiniMap.h
     MiniMap.cpp
+    Filters.h
+    Filters.cpp
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

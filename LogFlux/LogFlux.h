@@ -3,6 +3,7 @@
 #include "QMetaType"
 #include "ui_LogFlux.h"
 #include "Settings.h"
+#include "Filters.h"
 
 #include <QtWidgets/QMainWindow>
 #include <memory>
@@ -66,9 +67,15 @@ private:
 	QTextCursor m_currentMatch;
 
 	// Filtering
-	QList<QString> m_filters;        // active filters (global, case-insensitive)
+	QList<QString> m_filters;        // active filters as raw strings (for UI/backup)
 	QList<QString> m_filtersBackup;
-	QList<QString> m_allLines;       // full buffer of lines currently shown (cleared on onClearLog)
+	// full buffer of lines currently shown (cleared on onClearLog)
+	QList<QString> m_allLines;
+
+	// Parsed/compiled filter objects (each corresponds to a tag from m_filters).
+	// Each filter object's .matches() implements OR internally if the tag used '|'.
+
+	std::vector<std::shared_ptr<IFilter>> m_filterObjects;
 
 	QTextCharFormat formatForLine(const QString& line);
 
@@ -93,6 +100,9 @@ private:
 	void addBookmark();
 	void goToNextBookmark();
 	void goToPreviousBookmark();
+
+	// Build compiled filter objects from the current m_filters list.
+	void rebuildFilterObjects();
 
 private slots:
 	void onAddFileSource();

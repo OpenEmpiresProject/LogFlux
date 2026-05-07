@@ -3,6 +3,7 @@
 #include "ServerSource.h"
 #include "Settings.h"
 #include "MiniMap.h"
+#include "Filters.h"
 
 #include <QFileDialog>
 #include <QDebug>
@@ -68,6 +69,12 @@ LogFlux::LogFlux(QWidget *parent)
 LogFlux::~LogFlux()
 {
 
+}
+
+void LogFlux::rebuildFilterObjects()
+{
+	// Rebuild compiled filter objects from the m_filters strings
+	m_filterObjects = parseFilters(m_filters);
 }
 
 void LogFlux::addNewSource(SourceType type, DataSource* source)
@@ -243,14 +250,16 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 		ui.labelErrorCount->setText("Errors: " + QString::number(sourceData.errorCount));
 	}
 
-	// Decide whether to show the line depending on active filters (global, AND logic)
-	bool shouldShow = m_filters.isEmpty();
+	// Decide whether to show the line depending on active filters:
+	// - across tags: AND (every tag must match)
+	// - within a tag: OR (handled by filter object)
+	bool shouldShow = m_filterObjects.empty();
 	if (!shouldShow)
 	{
 		shouldShow = true;
-		for (const auto& f : m_filters)
+		for (const auto& f : m_filterObjects)
 		{
-			if (!line.contains(f, Qt::CaseInsensitive))
+			if (!f || !f->matches(line))
 			{
 				shouldShow = false;
 				break;
@@ -376,8 +385,11 @@ void LogFlux::highlightAllMatches(const QString& text)
 
 void LogFlux::filtersChanged(const QStringList& filters)
 {
-	// store active filters (global, case-insensitive matching below)
+	// store active filters (raw strings for UI/backup)
 	m_filters = filters;
+
+	// (re)compile filter objects
+	rebuildFilterObjects();
 
 	// rebuild visible document from the buffered lines
 	ui.plainTextEdit->clear();
@@ -388,17 +400,21 @@ void LogFlux::filtersChanged(const QStringList& filters)
 	// Re-insert only lines matching all filters (AND). If no filters, show everything.
 	for (const auto& line : m_allLines)
 	{
-		bool matches = true;
-		for (const auto& f : m_filters)
+		bool matches = m_filterObjects.empty();
+		if (!matches)
 		{
-			if (!line.contains(f, Qt::CaseInsensitive))
+			matches = true;
+			for (const auto& f : m_filterObjects)
 			{
-				matches = false;
-				break;
+				if (!f || !f->matches(line))
+				{
+					matches = false;
+					break;
+				}
 			}
 		}
 
-		if (m_filters.isEmpty() || matches)
+		if (m_filterObjects.empty() || matches)
 		{
 			QTextCharFormat fmt = formatForLine(line);
 
