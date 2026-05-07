@@ -37,6 +37,8 @@ LogFlux::LogFlux(QWidget *parent)
 	ui.bookmarkBar->setBookmarkIcon(QPixmap(":/images/bookmark.png"));
 	ui.bookmarkBar->setEditor(ui.plainTextEdit); // promoted to LogTextEdit
 	ui.lineNumberArea->setEditor(ui.plainTextEdit);
+	// Let the line number area know the authoritative visible->absolute mapping
+	ui.lineNumberArea->setVisibleToAbsoluteMap(&m_visibleToAbsolute);
 	ui.scrollbarMinimap->setEditor(ui.plainTextEdit);
 	
 	// Hide default scrollbar in favour of minimap scrollbar
@@ -141,6 +143,9 @@ void LogFlux::onClearLog()
 	m_visibleToAbsolute.clear();
 	ui.bookmarkBar->clearAllBookmarks();
 	ui.scrollbarMinimap->clearMarkers();
+
+	// Notify line number gutter that mapping/content changed
+	ui.lineNumberArea->refresh();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -323,6 +328,9 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	// Update visible-to-absolute mapping (new visible line maps to absolute index)
 	m_visibleToAbsolute.append(absoluteIndex);
 
+	// Notify line number gutter about new mapping/possible width change
+	ui.lineNumberArea->refresh();
+
 	// If this absolute line is bookmarked, reflect it in bookmark view + minimap
 	if (m_bookmarks.contains(absoluteIndex))
 	{
@@ -488,6 +496,9 @@ void LogFlux::filtersChanged(const QStringList& filters)
 
 	ui.bookmarkBar->setBookmarks(visibleBookmarks);
 	ui.scrollbarMinimap->setMarkers(minimapMarkers);
+
+	// Notify line number gutter that mapping and document were rebuilt
+	ui.lineNumberArea->refresh();
 
 	// Update search highlights (if any search text active)
 	if (!m_searchText.isEmpty())
@@ -1066,6 +1077,9 @@ void LogFlux::applyQuickFilters()
 
 	ui.bookmarkBar->setBookmarks(visibleBookmarks);
 	ui.scrollbarMinimap->setMarkers(markers);
+
+	// Notify gutter that mapping changed
+	ui.lineNumberArea->refresh();
 
 	// Update search highlights (if any search text active)
 	if (!m_searchText.isEmpty())

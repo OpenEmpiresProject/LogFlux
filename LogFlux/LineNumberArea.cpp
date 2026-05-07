@@ -3,6 +3,7 @@
 
 #include <QPainter>
 #include <QTextBlock>
+#include <algorithm>
 
 LineNumberArea::LineNumberArea(QWidget* parent)
 	: QWidget(parent)
@@ -22,11 +23,34 @@ void LineNumberArea::setEditor(LogTextEdit* editor)
 	updateWidth();
 }
 
+void LineNumberArea::setVisibleToAbsoluteMap(const QVector<int>* map)
+{
+	m_visibleToAbsolute = map;
+	// Mapping change can affect gutter width (number of digits), so refresh.
+	refresh();
+}
+
+void LineNumberArea::refresh()
+{
+	updateWidth();
+	update();
+}
+
 int LineNumberArea::calculateWidth() const
 {
 	if (!m_editor) return 0;
 
-	int digits = QString::number(m_editor->blockCount()).length();
+	// Determine the number that should be used to compute digit width:
+	// - prefer the maximum absolute line number from the mapping (if provided)
+	// - otherwise fall back to the number of visible blocks
+	int maxNumber = m_editor->blockCount();
+	if (m_visibleToAbsolute && !m_visibleToAbsolute->isEmpty())
+	{
+		int maxAbs = *std::max_element(m_visibleToAbsolute->constBegin(), m_visibleToAbsolute->constEnd()) + 1;
+		maxNumber = std::max(maxNumber, maxAbs);
+	}
+
+	int digits = QString::number(maxNumber).length();
 	return 10 + m_editor->fontMetrics().horizontalAdvance('9') * digits;
 }
 
@@ -68,13 +92,24 @@ void LineNumberArea::paintEvent(QPaintEvent* event)
 	{
 		if (block.isVisible() && bottom >= event->rect().top())
 		{
+			// Prefer showing original (absolute) line number when mapping is available.
+			QString numberText;
+			if (m_visibleToAbsolute && blockNumber >= 0 && blockNumber < m_visibleToAbsolute->size())
+			{
+				numberText = QString::number((*m_visibleToAbsolute)[blockNumber] + 1);
+			}
+			else
+			{
+				numberText = QString::number(blockNumber + 1);
+			}
+
 			painter.setPen(Qt::gray);
 			painter.drawText(0,
 				top,
 				width() - 5,
 				m_editor->fontMetrics().height(),
 				Qt::AlignRight,
-				QString::number(blockNumber + 1));
+				numberText);
 		}
 
 		block = block.next();

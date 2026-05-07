@@ -13,6 +13,13 @@ public:
 
 	void setEditor(LogTextEdit* editor);
 
+	// Provide access to the mapping maintained by LogFlux so line numbers
+	// shown in the gutter correspond to original (absolute) line numbers.
+	void setVisibleToAbsoluteMap(const QVector<int>* map);
+
+	// Force recalculation of width and repaint (call after mapping or content changes).
+	void refresh();
+
 protected:
 	void paintEvent(QPaintEvent* event) override;
 
@@ -25,4 +32,6 @@ private:
 
 private:
 	LogTextEdit* m_editor = nullptr;
+	// Pointer to authoritative mapping: visible block index -> absolute line index.
+	const QVector<int>* m_visibleToAbsolute = nullptr;
 };
