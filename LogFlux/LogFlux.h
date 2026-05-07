@@ -8,6 +8,8 @@
 #include <QtWidgets/QMainWindow>
 #include <memory>
 #include <vector>
+#include <QSet>
+#include <QVector>
 
 class DataSource;
 
@@ -67,21 +69,23 @@ private:
 	QTextCursor m_currentMatch;
 
 	// Filtering
-	QList<QString> m_filters;        // active filters as raw strings (for UI/backup)
+	QList<QString> m_filters;
 	QList<QString> m_filtersBackup;
-	// full buffer of lines currently shown (cleared on onClearLog)
-	QList<QString> m_allLines;
-
-	// Parsed/compiled filter objects (each corresponds to a tag from m_filters).
-	// Each filter object's .matches() implements OR internally if the tag used '|'.
-
 	std::vector<std::shared_ptr<IFilter>> m_filterObjects;
-
 	// When true, quick filters are used instead of m_filterObjects (normal filters).
 	bool m_useQuickFilters = false;
 
-	QTextCharFormat formatForLine(const QString& line);
+	// Authoritative set stored as absolute indices into m_allLines (0-based)
+	QSet<int> m_bookmarks;
 
+	// Mapping from visible document block number -> absolute m_allLines index.
+	// Updated whenever the visible document is rebuilt.
+	QVector<int> m_visibleToAbsolute;
+
+	// full buffer of lines currently shown (cleared on onClearLog)
+	QList<QString> m_allLines;
+
+	QTextCharFormat formatForLine(const QString& line);
 	void startServer(const QString& host, int port);
 	void updateSelections();
 	void updateSearchCount();
@@ -127,6 +131,9 @@ private slots:
 	void filtersChanged(const QStringList& filters);
 	void filtersEnabled(bool enabled);
 	void onQuickFiltersChanged(bool checked);
+
+	// Bookmark toggled in the bookmark view (visible block number, enabled)
+	void onBookmarkToggled(int visibleBlockNumber, bool enabled);
 
 signals:
 	void sourceStatusChange(SourceType type, DataSource* source, bool online);

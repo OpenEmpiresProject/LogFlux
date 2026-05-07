@@ -59,8 +59,10 @@ LogFlux::LogFlux(QWidget *parent)
 	connect(ui.filters, &TagBar::tagsChanged, this, &LogFlux::filtersChanged);
 	connect(ui.lineEditFilter, &TagLineEdit::tagEntered, ui.filters, &TagBar::addTag);
 	connect(ui.lineEditFilter, &TagLineEdit::backspaceOnEmpty, ui.filters, &TagBar::removeLastTag);
-	// Keep minimap in sync with bookmark changes (bookmarks can change anytime)
+	// Keep minimap in sync with bookmark changes (bookmarks can change anytime).
 	connect(ui.bookmarkBar, &BookmarkArea::bookmarkToggled, ui.scrollbarMinimap, &MiniMap::setBookmark);
+	// When user toggles a bookmark in the view, update authoritative set in LogFlux.
+	connect(ui.bookmarkBar, &BookmarkArea::bookmarkToggled, this, &LogFlux::onBookmarkToggled);
 	connect(ui.checkBoxFilters, &QCheckBox::toggled, this, &LogFlux::filtersEnabled);
 	connect(ui.checkBoxErrors, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
 	connect(ui.checkBoxWarnings, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
@@ -130,9 +132,15 @@ void LogFlux::onClearLog()
 	ui.labelLineCount->setText("Lines: 0");
 	ui.labelErrorCount->setText("Errors: 0");
 	ui.labelWarningCount->setText("Warns: 0");
-
-	// clear the in-memory buffer of lines (document will be rebuilt from this buffer on filtering)
-	m_allLines.clear();
+ 
+ 	// clear the in-memory buffer of lines (document will be rebuilt from this buffer on filtering)
+ 	m_allLines.clear();
+ 
+	// clear bookmarks (they refer to absolute indices into m_allLines)
+	m_bookmarks.clear();
+	m_visibleToAbsolute.clear();
+	ui.bookmarkBar->clearAllBookmarks();
+	ui.scrollbarMinimap->clearMarkers();
 
 	if (m_sources.contains(m_currentSource))
 	{
@@ -233,6 +241,8 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	if (m_sources.value(m_currentSource, SourceData()).source != source)
 		return;
 
+	int absoluteIndex = m_allLines.size();
+
 	// keep a full buffer of all lines for the current view (used for filtering)
 	m_allLines.append(line);
 
@@ -308,6 +318,16 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 	else if (line.contains("error", Qt::CaseInsensitive))
 	{
 		ui.scrollbarMinimap->addMarker(blockNumber, MiniMap::Error);
+	}
+
+	// Update visible-to-absolute mapping (new visible line maps to absolute index)
+	m_visibleToAbsolute.append(absoluteIndex);
+
+	// If this absolute line is bookmarked, reflect it in bookmark view + minimap
+	if (m_bookmarks.contains(absoluteIndex))
+	{
+		ui.bookmarkBar->setBookmark(blockNumber, true);
+		ui.scrollbarMinimap->setBookmark(blockNumber, true);
 	}
 
  	if (atEnd)
@@ -404,21 +424,19 @@ void LogFlux::highlightAllMatches(const QString& text)
 
 void LogFlux::filtersChanged(const QStringList& filters)
 {
-	// store active filters (raw strings for UI/backup)
 	m_filters = filters;
-
-	// (re)compile filter objects
 	rebuildFilterObjects();
 
-	// rebuild visible document from the buffered lines
 	ui.plainTextEdit->clear();
+	m_visibleToAbsolute.clear();
 
-	// We'll collect markers for the minimap while rebuilding the visible document.
-	QVector<MiniMap::Marker> markers;
+	QVector<MiniMap::Marker> minimapMarkers;
 
-	// Re-insert only lines matching all filters (AND). If no filters, show everything.
-	for (const auto& line : m_allLines)
+	// Re-insert only lines matching filters
+	for (int absoluteIndex = 0; absoluteIndex < m_allLines.size(); ++absoluteIndex)
 	{
+		const QString& line = m_allLines[absoluteIndex];
+
 		bool matches = m_filterObjects.empty();
 		if (!matches)
 		{
@@ -440,26 +458,36 @@ void LogFlux::filtersChanged(const QStringList& filters)
 			QTextCursor insertCursor(ui.plainTextEdit->document());
 			insertCursor.movePosition(QTextCursor::End);
 			insertCursor.insertText(line + "\n", fmt);
-			// If this visible line contains warn/error, prepare a marker.
+
+			m_visibleToAbsolute.append(absoluteIndex);
+
 			int blockNumber = ui.plainTextEdit->document()->blockCount() - 1;
 			if (line.contains("warn", Qt::CaseInsensitive))
 			{
-				markers.append({ blockNumber, MiniMap::Warning });
+				minimapMarkers.append({ blockNumber, MiniMap::Warning });
 			}
 			else if (line.contains("error", Qt::CaseInsensitive))
 			{
-				markers.append({ blockNumber, MiniMap::Error });
+				minimapMarkers.append({ blockNumber, MiniMap::Error });
+			}
+
+			if (m_bookmarks.contains(absoluteIndex))
+			{
+				minimapMarkers.append({ blockNumber, MiniMap::Bookmark });
 			}
 		}
 	}
 
-	// Merge bookmarks (current bookmark positions are based on the current editor)
-	auto bset = ui.bookmarkBar->bookmarks();
-	for (int b : bset)
-		markers.append({ b, MiniMap::Bookmark });
+	// Update bookmark view to reflect which absolute bookmarks are currently visible.
+	QSet<int> visibleBookmarks;
+	for (int visibleBlock = 0; visibleBlock < m_visibleToAbsolute.size(); ++visibleBlock)
+	{
+		if (m_bookmarks.contains(m_visibleToAbsolute[visibleBlock]))
+			visibleBookmarks.insert(visibleBlock);
+	}
 
-	// Set new marker set for the minimap in one operation (efficient).
-	ui.scrollbarMinimap->setMarkers(markers);
+	ui.bookmarkBar->setBookmarks(visibleBookmarks);
+	ui.scrollbarMinimap->setMarkers(minimapMarkers);
 
 	// Update search highlights (if any search text active)
 	if (!m_searchText.isEmpty())
@@ -768,11 +796,12 @@ void LogFlux::addBookmark()
 
 void LogFlux::goToNextBookmark()
 {
-	auto set = ui.bookmarkBar->bookmarks();
-	if (set.isEmpty())
+	// Use authoritative bookmarks mapped to visible blocks
+	QSet<int> visible = ui.bookmarkBar->bookmarks();
+	if (visible.isEmpty())
 		return;
 
-	QList<int> list = set.values();
+	QList<int> list = visible.values();
 	std::sort(list.begin(), list.end());
 
 	QTextCursor cur = ui.plainTextEdit->textCursor();
@@ -806,11 +835,11 @@ void LogFlux::goToNextBookmark()
 
 void LogFlux::goToPreviousBookmark()
 {
-	auto set = ui.bookmarkBar->bookmarks();
-	if (set.isEmpty())
+	QSet<int> visible = ui.bookmarkBar->bookmarks();
+	if (visible.isEmpty())
 		return;
 
-	QList<int> list = set.values();
+	QList<int> list = visible.values();
 	std::sort(list.begin(), list.end());
 
 	QTextCursor cur = ui.plainTextEdit->textCursor();
@@ -984,14 +1013,16 @@ void LogFlux::destroyExistingSource(SourceType type)
 void LogFlux::applyQuickFilters()
 {
 	ui.plainTextEdit->clear();
+	m_visibleToAbsolute.clear();
 
 	QVector<MiniMap::Marker> markers;
 
 	const bool wantError = ui.checkBoxErrors->isChecked();
 	const bool wantWarn = ui.checkBoxWarnings->isChecked();
 
-	for (const auto& line : m_allLines)
+	for (int absoluteIndex = 0; absoluteIndex < m_allLines.size(); ++absoluteIndex)
 	{
+		const QString& line = m_allLines[absoluteIndex];
 		bool show = false;
 		if (wantError && line.contains("error", Qt::CaseInsensitive))
 			show = true;
@@ -1007,6 +1038,8 @@ void LogFlux::applyQuickFilters()
 		insertCursor.movePosition(QTextCursor::End);
 		insertCursor.insertText(line + "\n", fmt);
 
+		m_visibleToAbsolute.append(absoluteIndex);
+
 		int blockNumber = ui.plainTextEdit->document()->blockCount() - 1;
 		if (line.contains("warn", Qt::CaseInsensitive))
 		{
@@ -1016,13 +1049,22 @@ void LogFlux::applyQuickFilters()
 		{
 			markers.append({ blockNumber, MiniMap::Error });
 		}
+		// bookmark markers for visible bookmarked absolute lines
+		if (m_bookmarks.contains(absoluteIndex))
+		{
+			markers.append({ blockNumber, MiniMap::Bookmark });
+		}
 	}
 
 	// Merge bookmarks
-	auto bset = ui.bookmarkBar->bookmarks();
-	for (int b : bset)
-		markers.append({ b, MiniMap::Bookmark });
+	QSet<int> visibleBookmarks;
+	for (int visibleBlock = 0; visibleBlock < m_visibleToAbsolute.size(); ++visibleBlock)
+	{
+		if (m_bookmarks.contains(m_visibleToAbsolute[visibleBlock]))
+			visibleBookmarks.insert(visibleBlock);
+	}
 
+	ui.bookmarkBar->setBookmarks(visibleBookmarks);
 	ui.scrollbarMinimap->setMarkers(markers);
 
 	// Update search highlights (if any search text active)
@@ -1065,4 +1107,28 @@ void LogFlux::onQuickFiltersChanged(bool /*checked*/)
 			filtersChanged({});
 		}
 	}
+}
+
+void LogFlux::onBookmarkToggled(int visibleBlockNumber, bool enabled)
+{
+	if (visibleBlockNumber < 0 || visibleBlockNumber >= m_visibleToAbsolute.size())
+		return;
+
+	int absoluteIndex = m_visibleToAbsolute[visibleBlockNumber];
+
+	if (enabled)
+		m_bookmarks.insert(absoluteIndex);
+	else
+		m_bookmarks.remove(absoluteIndex);
+
+	// Recompute visible bookmarks and update the bookmark view so it shows only bookmarks for visible lines.
+	QSet<int> visibleBookmarks;
+	for (int visible = 0; visible < m_visibleToAbsolute.size(); ++visible)
+	{
+		if (m_bookmarks.contains(m_visibleToAbsolute[visible]))
+			visibleBookmarks.insert(visible);
+	}
+
+	ui.bookmarkBar->setBookmarks(visibleBookmarks);
+	ui.scrollbarMinimap->setBookmark(visibleBlockNumber, enabled);
 }

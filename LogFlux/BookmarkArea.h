@@ -21,6 +21,10 @@ public:
 	void clearBookmark(int blockNumber);
 	void clearAllBookmarks();
 
+	// Set visible bookmarks (view-only, won't emit bookmarkToggled).
+	// Source of truth will call this to update view.
+	void setBookmarks(const QSet<int>& bookmarks);
+
 	bool hasBookmark(int blockNumber) const;
 	QSet<int> bookmarks() const;
 

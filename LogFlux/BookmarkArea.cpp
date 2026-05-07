@@ -90,6 +90,16 @@ QSet<int> BookmarkArea::bookmarks() const
 	return m_bookmarks;
 }
 
+void BookmarkArea::setBookmarks(const QSet<int>& bookmarks)
+{
+	// Update view-only bookmark set without emitting toggle signals.
+	if (m_bookmarks == bookmarks)
+		return;
+
+	m_bookmarks = bookmarks;
+	update();
+}
+
 void BookmarkArea::updateWidth()
 {
 	// Intentionally empty:
