@@ -55,16 +55,23 @@ class LogFlux : public QMainWindow
     QList<QString> m_filtersBackup;
     std::vector<std::shared_ptr<IFilter>> m_filterObjects;
     // When true, quick filters are used instead of m_filterObjects (normal filters).
+    // The two modes are mutually exclusive: activating quick filters disables normal
+    // filters and vice versa.
     bool m_useQuickFilters = false;
 
-    // Authoritative set stored as absolute indices into m_allLines (0-based)
+    // Bookmarks are stored as absolute indices into m_allLines (not visible block numbers)
+    // so they survive filter changes. When filters are applied, the visible document is
+    // rebuilt and visible block numbers change, but absolute indices remain stable.
     QSet<int> m_bookmarks;
 
-    // Mapping from visible document block number -> absolute m_allLines index.
-    // Updated whenever the visible document is rebuilt.
+    // Maps visible document block number -> absolute index in m_allLines.
+    // Rebuilt whenever the visible document is rebuilt (filter change, clear, etc.).
+    // Allows the line number gutter to show original line numbers and lets bookmark
+    // operations translate between the two coordinate spaces.
     QVector<int> m_visibleToAbsolute;
 
-    // full buffer of lines currently shown (cleared on onClearLog)
+    // Full buffer of every line received from the active source.
+    // Never filtered — used to rebuild the visible document when filters change.
     QList<QString> m_allLines;
 
     bool m_tailing = false;

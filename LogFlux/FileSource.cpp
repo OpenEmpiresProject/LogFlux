@@ -73,7 +73,7 @@ void FileSource::onFileChanged(const QString& path)
     if (!file.open(QIODevice::ReadOnly))
         return;
 
-    // file truncated or rotated
+    // file truncated or rotated — reset so the new content is read from the start
     if (file.size() < m_lastFilePos)
     {
         m_lastFilePos = 0;
@@ -87,5 +87,6 @@ void FileSource::onFileChanged(const QString& path)
         auto line = in.readLine();
         emit onNewLine(this, line);
     }
+    // Advance the cursor so the next change event only reads newly appended bytes.
     m_lastFilePos = file.pos();
 }

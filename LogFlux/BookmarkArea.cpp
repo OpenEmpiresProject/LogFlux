@@ -16,8 +16,6 @@ void BookmarkArea::setEditor(LogTextEdit* editor)
 
     connect(editor, &QPlainTextEdit::updateRequest, this, &BookmarkArea::updateArea);
 
-    connect(editor, &QPlainTextEdit::blockCountChanged, this, &BookmarkArea::updateWidth);
-
     update();
 }
 
@@ -88,20 +86,15 @@ QSet<int> BookmarkArea::bookmarks() const
     return m_bookmarks;
 }
 
+// Model (i.e. LogFlux) was updated. Update the view (i.e. BookmarkArea)
+// No signals would be fired.
 void BookmarkArea::setBookmarks(const QSet<int>& bookmarks)
 {
-    // Update view-only bookmark set without emitting toggle signals.
     if (m_bookmarks == bookmarks)
         return;
 
     m_bookmarks = bookmarks;
     update();
-}
-
-void BookmarkArea::updateWidth()
-{
-    // Intentionally empty:
-    // Width is controlled by Qt Designer layout
 }
 
 void BookmarkArea::updateArea(const QRect& rect, int dy)
@@ -140,7 +133,8 @@ void BookmarkArea::paintEvent(QPaintEvent* event)
 
     int bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
 
-    // IMPORTANT: icon size depends ONLY on available widget height
+    // Bounding by font height ensures the icon never overflows its line cell,
+    // regardless of how narrow or wide the gutter widget is.
     const int iconSize = qMin(width(), m_editor->fontMetrics().height());
 
     while (block.isValid() && top <= event->rect().bottom())

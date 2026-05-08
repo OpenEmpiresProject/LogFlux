@@ -40,7 +40,9 @@ int LineNumberArea::calculateWidth() const
         return 0;
 
     // Determine the number that should be used to compute digit width:
-    // - prefer the maximum absolute line number from the mapping (if provided)
+    // - prefer the maximum absolute line number from the mapping (if provided),
+    //   because filtered views can show high-numbered lines (e.g., line 9999 of 10000)
+    //   and the gutter must be wide enough to display them without truncation
     // - otherwise fall back to the number of visible blocks
     int maxNumber = m_editor->blockCount();
     if (m_visibleToAbsolute && !m_visibleToAbsolute->isEmpty())
@@ -89,7 +91,9 @@ void LineNumberArea::paintEvent(QPaintEvent* event)
     {
         if (block.isVisible() && bottom >= event->rect().top())
         {
-            // Prefer showing original (absolute) line number when mapping is available.
+            // Show the original (absolute) line number when a mapping is available
+            // so the gutter reflects the position in the full unfiltered log,
+            // not the position within the current filtered view.
             QString numberText;
             if (m_visibleToAbsolute && blockNumber >= 0 &&
                 blockNumber < m_visibleToAbsolute->size())

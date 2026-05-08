@@ -111,6 +111,10 @@ void MiniMap::updateViewportRect()
 
     QScrollBar* sb = m_editor->verticalScrollBar();
 
+    // The full scroll range is maximum + pageStep, not just maximum.
+    // maximum() alone represents the last scroll position, but the viewport
+    // still covers one pageStep worth of content from there, so we must
+    // include it to get the correct proportional size of the viewport rect.
     int fullRange = sb->maximum() + sb->pageStep();
     if (fullRange <= 0)
         return;
@@ -161,8 +165,10 @@ void MiniMap::paintEvent(QPaintEvent*)
             continue;
         }
 
-        // Block numbers could be out of range (e.g., stale bookmarks after a rebuild).
-        // We clamp them to visible range.
+        // Block numbers could be out of range after a document rebuild
+        // (e.g., stale bookmarks that haven't been remapped yet).
+        // Clamp to the last block so the marker stays visible at the bottom
+        // of the minimap rather than being silently dropped.
         int blockNum = m.blockNumber;
         if (blockNum < 0)
             continue;
@@ -174,7 +180,7 @@ void MiniMap::paintEvent(QPaintEvent*)
         p.fillRect(0, y, width(), h, color);
     }
 
-    // Viewport highlight overlay -- hidden when the entire document fits
+    // Viewport highlight overlay (i.e. scrollbar handle) — hidden when the entire document fits
     // in the window (scrollbar maximum == 0 means nothing to scroll).
     if (m_editor->verticalScrollBar()->maximum() > 0)
     {
@@ -209,8 +215,9 @@ void MiniMap::scrollEditorToBlock(int blockNumber)
     if (!m_editor)
         return;
 
-    // Scroll via the scrollbar value this does NOT move the text cursor,
-    // matching standard scrollbar behaviour.
+    // Set the scrollbar value directly rather than moving the text cursor.
+    // Moving the cursor would trigger onCursorPositionChanged, which stops tailing
+    // and changes the user's selection — standard scrollbar behaviour should not do that.
     QScrollBar* sb = m_editor->verticalScrollBar();
     int totalBlocks = m_editor->document()->blockCount();
     if (sb->maximum() <= 0 || totalBlocks <= 0)

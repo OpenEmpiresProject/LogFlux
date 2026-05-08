@@ -11,7 +11,7 @@
 #include <windows.h>
 #pragma comment(lib, "dwmapi.lib")
 
-// Some SDKs don’t define this yet
+// Some SDKs don't define this yet
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
@@ -63,6 +63,7 @@ int main(int argc, char* argv[])
     darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(130, 130, 130));
 
     app.setPalette(darkPalette);
+    // without this the dark palette would be partially ignored.
     app.setStyle(QStyleFactory::create("Fusion"));
 
     app.setWindowIcon(QIcon(":/images/app.png"));
@@ -71,7 +72,8 @@ int main(int argc, char* argv[])
     window.show();
 
 #ifdef _WIN32
-    // IMPORTANT: call AFTER show() so HWND exists
+    // Must be called after show() â€” the native HWND is not created until
+    // the window is first shown, so winId() would return 0 before that.
     HWND hwnd = reinterpret_cast<HWND>(window.winId());
     enableDarkTitleBar(hwnd);
 #endif

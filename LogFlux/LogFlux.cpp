@@ -42,6 +42,7 @@ LogFlux::LogFlux(QWidget* parent) : QMainWindow(parent)
     ui.scrollbarMinimap->setEditor(ui.plainTextEdit);
 
     // Hide default scrollbar in favour of minimap scrollbar
+    // The minimap widget acts as the scrollbar, so the built-in one would be redundant.
     ui.plainTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     setupShortcuts();
@@ -70,7 +71,7 @@ LogFlux::LogFlux(QWidget* parent) : QMainWindow(parent)
     connect(ui.checkBoxErrors, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
     connect(ui.checkBoxWarnings, &QCheckBox::toggled, this, &LogFlux::onQuickFiltersChanged);
 
-    startServer("", 5000); // Start server, but file would be the default source
+    startServer("", 5000); // Start server in the background; file source is the default active view
 }
 
 LogFlux::~LogFlux()
@@ -125,6 +126,8 @@ void LogFlux::startServer(const QString& host, int port)
 {
     destroyExistingSource(SourceType::SERVER_SOURCE);
     addNewSource(SourceType::SERVER_SOURCE, new ServerSource(host, port));
+    // The server starts in the background but the file source remains the active view.
+    // The user switches to the server view via the radio button.
     m_currentSource = SourceType::FILE_SOURCE;
 }
 
@@ -138,7 +141,8 @@ void LogFlux::onClearLog()
     // clear the in-memory buffer of lines (document will be rebuilt from this buffer on filtering)
     m_allLines.clear();
 
-    // clear bookmarks (they refer to absolute indices into m_allLines)
+    // clear bookmarks (they refer to absolute indices into m_allLines,
+    // which is about to be cleared, so all bookmark positions become invalid)
     m_bookmarks.clear();
     m_visibleToAbsolute.clear();
     ui.bookmarkBar->clearAllBookmarks();
@@ -244,6 +248,7 @@ QTextCharFormat LogFlux::formatForLine(const QString& line)
 void LogFlux::onNewLine(DataSource* source, const QString& line)
 {
     // Data from different source than currently active, ignore
+    // Multiple sources can be alive simultaneously; only the active one feeds the view.
     if (m_sources.value(m_currentSource, SourceData()).source != source)
         return;
 
@@ -256,7 +261,8 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
     sourceData.lineCount++;
     ui.labelLineCount->setText("Lines: " + QString::number(sourceData.lineCount));
 
-    // update counts for warns/errors based on content (total counts remain even if filtered)
+    // update counts for warns/errors based on content
+    // Counts reflect the total received, not just what is currently visible after filtering.
     if (line.contains("warn", Qt::CaseInsensitive))
     {
         sourceData.warnCount++;
@@ -270,12 +276,13 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 
     // Decide whether to show the line depending on active filters:
     // - across tags: AND (every tag must match)
-    // - within a tag: OR (handled by filter object)
+    // - within a tag: OR (handled by the filter object itself via OrFilter)
     bool shouldShow = false;
 
     if (m_useQuickFilters)
     {
         // Quick filters: OR semantics between error/warning checkboxes.
+        // Either condition alone is sufficient to show the line.
         const bool wantError = ui.checkBoxErrors->isChecked();
         const bool wantWarn = ui.checkBoxWarnings->isChecked();
 
@@ -307,7 +314,8 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 
     QTextCharFormat fmt = formatForLine(line);
 
-    // create a separate cursor for insertion
+    // create a separate cursor for insertion so we don't disturb the user's
+    // current cursor position or selection while appending new content.
     QTextCursor insertCursor(ui.plainTextEdit->document());
     insertCursor.movePosition(QTextCursor::End);
     insertCursor.insertText(line + "\n", fmt);
@@ -324,13 +332,16 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
         ui.scrollbarMinimap->addMarker(blockNumber, MiniMap::Error);
     }
 
-    // Update visible-to-absolute mapping (new visible line maps to absolute index)
+    // Update visible-to-absolute mapping so the line number gutter and bookmark
+    // system can translate between visible block numbers and original line indices.
     m_visibleToAbsolute.append(absoluteIndex);
 
     // Notify line number gutter about new mapping/possible width change
     ui.lineNumberArea->refresh();
 
-    // If this absolute line is bookmarked, reflect it in bookmark view + minimap
+    // If this absolute line is bookmarked, reflect it in bookmark view + minimap.
+    // Bookmarks are stored by absolute index so they survive filter changes;
+    // here we restore the visual marker for lines that re-appear after a rebuild.
     if (m_bookmarks.contains(absoluteIndex))
     {
         ui.bookmarkBar->setBookmark(blockNumber, true);
@@ -511,10 +522,11 @@ void LogFlux::filtersEnabled(bool enabled)
     if (enabled)
     {
         // When user re-enables normal filters, we must stop using quick filters
-        // and clear quick-filter checkboxes.
+        // and clear quick-filter checkboxes to avoid both modes being active at once.
         if (m_useQuickFilters)
         {
-            // prevent quick filter handlers from running while we clear UI
+            // blockSignals prevents onQuickFiltersChanged from firing while we
+            // programmatically uncheck the boxes, which would cause a re-entrant rebuild.
             ui.checkBoxErrors->blockSignals(true);
             ui.checkBoxWarnings->blockSignals(true);
 
@@ -532,7 +544,8 @@ void LogFlux::filtersEnabled(bool enabled)
     }
     else
     {
-        // disable normal filters but keep them backed up
+        // disable normal filters but keep them backed up so they can be restored
+        // when the user re-enables the filter checkbox
         m_filtersBackup = m_filters;
         filtersChanged({});
     }
@@ -554,6 +567,8 @@ void LogFlux::updateSelections()
     for (auto sel : m_searchSelections)
     {
         // highlight current match differently
+        // Orange distinguishes the active match from the yellow background
+        // used for all other matches.
         if (!m_currentMatch.isNull() &&
             sel.cursor.selectionStart() == m_currentMatch.selectionStart() &&
             sel.cursor.selectionEnd() == m_currentMatch.selectionEnd())
@@ -577,7 +592,7 @@ void LogFlux::findNext()
 
     if (found.isNull())
     {
-        // wrap
+        // wrap around to the beginning so navigation is cyclic
         QTextCursor start(ui.plainTextEdit->document());
         found = ui.plainTextEdit->document()->find(m_searchText, start);
     }
@@ -606,7 +621,7 @@ void LogFlux::findPrevious()
     {
         QTextCursor end(ui.plainTextEdit->document());
         end.movePosition(QTextCursor::End);
-
+        // wrap around to the end so backward navigation is also cyclic
         found = ui.plainTextEdit->document()->find(m_searchText, end, QTextDocument::FindBackward);
     }
 
@@ -670,6 +685,7 @@ void LogFlux::launchSettingsWindow()
             });
 
     // Set the current status of the server before launching the setting window
+    // so the dialog shows the live state rather than a stale default.
     auto sourceData = m_sources.value(SourceType::SERVER_SOURCE, SourceData());
     settings.ui.lineEditSettingServerStatus->setText(sourceData.online ? "Online" : "Offline");
 
@@ -686,6 +702,9 @@ void LogFlux::ensureCursorVisibleOnlyIfNeeded(const QTextCursor& cursor)
     bool above = cursorRect.top() < viewportRect.top() + margin;
     bool below = cursorRect.bottom() > viewportRect.bottom() - margin;
 
+    // QPlainTextEdit::ensureCursorVisible() always scrolls even when the cursor
+    // is already on screen, causing jarring jumps. Only call it when the cursor
+    // is genuinely outside the visible area.
     if (above || below)
     {
         ui.plainTextEdit->ensureCursorVisible();
@@ -726,7 +745,8 @@ void LogFlux::navigateToLogToken(const QString& token, QTextDocument::FindFlags 
         QTextCursor edge(doc);
         if (findFlags & QTextDocument::FindBackward)
             edge.movePosition(QTextCursor::End); // search backward from end
-        // else default constructed cursor() starts at beginning
+        // A default-constructed QTextCursor(doc) starts at position 0,
+        // so no explicit move is needed for the forward wrap case.
 
         found = doc->find(re, edge, findFlags);
     }
@@ -888,6 +908,8 @@ void LogFlux::setupShortcuts()
                   [this]()
                   {
                       goToEndOfLog();
+                      // Enable tailing so new lines keep the view scrolled to the bottom,
+                      // matching the vim-style Shift+G "go to end and follow" idiom.
                       tail(true);
                   });
 
@@ -958,7 +980,8 @@ void LogFlux::destroyExistingSource(SourceType type)
         if (sourceData.source)
             QObject::disconnect(sourceData.source, nullptr, this, nullptr);
 
-        // Schedule deletion on the GUI thread's event loop.
+        // deleteLater defers destruction to the event loop so any signals already
+        // queued from this source are processed before the object is gone.
         if (sourceData.source)
             sourceData.source->deleteLater();
 
@@ -1053,9 +1076,10 @@ void LogFlux::onQuickFiltersChanged(bool /*checked*/)
     {
         // Uncheck normal filters if enabled. This will call filtersEnabled(false) and
         // backup the current filters.
+        // Allowing filtersEnabled(false) to run (not blocking signals) ensures the
+        // normal filter backup happens before we switch to quick filter mode.
         if (ui.checkBoxFilters->isChecked())
         {
-            // Allow filtersEnabled(false) to run (don't block), it will call filtersChanged({})
             ui.checkBoxFilters->setChecked(false);
         }
 
@@ -1081,6 +1105,8 @@ void LogFlux::onCursorPositionChanged()
 {
     highlightCurrentLine();
     updateSelections();
+    // Any manual navigation (click, keyboard) cancels tailing so the view
+    // stops jumping to the bottom while the user is reading. Shift+G re-enables it.
     tail(false);
 }
 
@@ -1097,7 +1123,8 @@ void LogFlux::onBookmarkToggled(int visibleBlockNumber, bool enabled)
         m_bookmarks.remove(absoluteIndex);
 
     // Recompute visible bookmarks and update the bookmark view so it shows only bookmarks for
-    // visible lines.
+    // visible lines. The bookmark bar works in visible block numbers, so we must translate
+    // the authoritative absolute set back to the current visible coordinate space.
     QSet<int> visibleBookmarks;
     for (int visible = 0; visible < m_visibleToAbsolute.size(); ++visible)
     {

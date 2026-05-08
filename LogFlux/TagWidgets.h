@@ -112,6 +112,8 @@ class FlowLayout : public QLayout
                 continue;
 
             const QSize sz = item->sizeHint();
+            // When the item would overflow the right edge, wrap to the next row.
+            // x > r.x() guards against wrapping a single item that is wider than the layout.
             if (x > r.x() && x + sz.width() > r.right() + 1)
             {
                 x = r.x();
@@ -160,6 +162,8 @@ class TagChip : public QWidget
 
         // Lock height to exactly what the layout needs so no invisible pixels
         // bleed outside the painted border and overlap neighbouring chips.
+        // Without this, the widget's actual height can exceed the painted rounded
+        // rect, creating invisible hit areas that interfere with adjacent chips.
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         adjustSize();
         setFixedHeight(sizeHint().height());
@@ -191,6 +195,9 @@ class TagChip : public QWidget
 
         const QPalette& pal = palette();
         QColor bg = pal.color(QPalette::Window);
+        // lighter() with a value > 100 brightens, < 100 darkens.
+        // On dark themes (lightness < 0.5) we brighten to make the chip stand out;
+        // on light themes we darken slightly for the same visual contrast.
         bg = bg.lighter(bg.lightnessF() < 0.5f ? 130 : 92);
 
         // 0.5px inset keeps the 1px stroke fully inside the widget rect
@@ -326,6 +333,9 @@ class TagBar : public QWidget
         auto* chip = m_chips.takeLast();
         m_layout->removeWidget(chip);
         chip->deleteLater();
+        // invalidate + adjustSize + updateGeometry are all needed:
+        // invalidate clears cached size hints, adjustSize resizes this widget
+        // to its new sizeHint, and updateGeometry notifies the parent layout.
         m_layout->invalidate();
         adjustSize();
         updateGeometry();
@@ -385,6 +395,8 @@ class TagLineEdit : public QLineEdit
 
         if (e->key() == Qt::Key_Backspace && text().isEmpty())
         {
+            // Backspace on an empty field removes the last chip rather than
+            // doing nothing, matching the standard tag-input UX pattern.
             emit backspaceOnEmpty();
             e->accept();
             return;

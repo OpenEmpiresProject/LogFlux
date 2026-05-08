@@ -10,7 +10,9 @@ class LogTextEdit : public QPlainTextEdit
   public:
     explicit LogTextEdit(QWidget* parent = nullptr);
 
-    // Expose protected APIs safely
+    // Qt declares these methods protected in QPlainTextEdit to discourage general use,
+    // but gutter widgets (BookmarkArea, LineNumberArea) need them to align their own
+    // painting with the editor's scroll position. Exposing them here.
     QTextBlock getFirstVisibleBlock() const;
     QPointF getContentOffset() const;
     QRectF getBlockBoundingGeometry(const QTextBlock& block) const;

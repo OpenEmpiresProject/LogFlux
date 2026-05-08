@@ -37,7 +37,6 @@ class BookmarkArea : public QWidget
 
   private slots:
     void updateArea(const QRect& rect, int dy);
-    void updateWidth();
 
   private:
     int calculateWidth() const;

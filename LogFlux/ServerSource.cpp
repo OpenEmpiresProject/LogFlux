@@ -87,10 +87,13 @@ void ServerSource::handleNewConnection()
             continue;
 
         // track buffer for the socket
+        // TCP is a stream — a single readAll() may deliver partial lines or
+        // several lines at once, so each socket needs its own accumulation buffer.
         m_buffers.insert(sock, QByteArray());
         connect(sock, &QTcpSocket::readyRead, this, &ServerSource::handleReadyRead);
         connect(sock, &QTcpSocket::disconnected, this, &ServerSource::handleDisconnected);
-        // Ensure socket is deleted later
+        // deleteLater defers destruction to the event loop so the socket is not
+        // deleted while it is still on the call stack during disconnect handling.
         connect(sock, &QTcpSocket::disconnected, sock, &QTcpSocket::deleteLater);
         qDebug() << "ServerSource: new connection from" << sock->peerAddress().toString()
                  << sock->peerPort();

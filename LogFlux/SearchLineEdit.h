@@ -17,7 +17,8 @@ QLineEdit {
 	placeholder-text-color: gray;
 }
 )");
-        setTextMargins(0, 0, 60, 0); // reserve space on the right
+        // Reserve space on the right so typed text never flows under the count label.
+        setTextMargins(0, 0, 60, 0);
     }
 
     void setAsNoResults()
@@ -66,6 +67,8 @@ QLineEdit {
     void updateMargins()
     {
         int w = m_info->sizeHint().width();
+        // Keep the right margin in sync with the actual label width so the
+        // text cursor never overlaps the count display as the number grows.
         setTextMargins(0, 0, w + 10, 0);
     }
 
