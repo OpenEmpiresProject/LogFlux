@@ -5,14 +5,14 @@
 
 class LogTextEdit : public QPlainTextEdit
 {
-	Q_OBJECT
+    Q_OBJECT
 
-public:
-	explicit LogTextEdit(QWidget* parent = nullptr);
+  public:
+    explicit LogTextEdit(QWidget* parent = nullptr);
 
-	// Expose protected APIs safely
-	QTextBlock getFirstVisibleBlock() const;
-	QPointF getContentOffset() const;
-	QRectF getBlockBoundingGeometry(const QTextBlock& block) const;
-	QRectF getBlockBoundingRect(const QTextBlock& block) const;
+    // Expose protected APIs safely
+    QTextBlock getFirstVisibleBlock() const;
+    QPointF getContentOffset() const;
+    QRectF getBlockBoundingGeometry(const QTextBlock& block) const;
+    QRectF getBlockBoundingRect(const QTextBlock& block) const;
 };

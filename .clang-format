@@ -1,0 +1,17 @@
+# .clang-format
+BasedOnStyle: Microsoft
+IndentWidth: 4
+TabWidth: 4
+Language: Cpp
+UseTab: Never
+ColumnLimit: 100
+AllowShortIfStatementsOnASingleLine: false
+BreakBeforeBraces: Allman
+IncludeBlocks: Regroup
+SortIncludes: true
+SpaceAfterCStyleCast: true
+SpacesInAngles: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+BinPackParameters: false

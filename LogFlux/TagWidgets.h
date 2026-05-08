@@ -1,114 +1,135 @@
 ﻿#pragma once
 
-#include <QWidget>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
 #include <QLayout>
 #include <QLayoutItem>
-#include <QList>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QToolButton>
 #include <QLineEdit>
-#include <QKeyEvent>
-#include <QStringList>
+#include <QList>
+#include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPaintEvent>
 #include <QPalette>
+#include <QStringList>
+#include <QToolButton>
+#include <QWidget>
 
 // ============================================================================
 // FlowLayout
 // ============================================================================
 class FlowLayout : public QLayout
 {
-public:
-	explicit FlowLayout(QWidget* parent = nullptr, int margin = 4, int spacing = 4)
-		: QLayout(parent)
-	{
-		setContentsMargins(margin, margin, margin, margin);
-		setSpacing(spacing);
-	}
+  public:
+    explicit FlowLayout(QWidget* parent = nullptr, int margin = 4, int spacing = 4)
+        : QLayout(parent)
+    {
+        setContentsMargins(margin, margin, margin, margin);
+        setSpacing(spacing);
+    }
 
-	~FlowLayout()
-	{
-		QLayoutItem* item;
-		while ((item = takeAt(0)))
-			delete item;
-	}
+    ~FlowLayout()
+    {
+        QLayoutItem* item;
+        while ((item = takeAt(0)))
+            delete item;
+    }
 
-	void addItem(QLayoutItem* item) override { m_items.append(item); }
-	int count() const override { return m_items.size(); }
-	QLayoutItem* itemAt(int i) const override { return m_items.value(i); }
-	QLayoutItem* takeAt(int i) override
-	{
-		return (i >= 0 && i < m_items.size()) ? m_items.takeAt(i) : nullptr;
-	}
+    void addItem(QLayoutItem* item) override
+    {
+        m_items.append(item);
+    }
+    int count() const override
+    {
+        return m_items.size();
+    }
+    QLayoutItem* itemAt(int i) const override
+    {
+        return m_items.value(i);
+    }
+    QLayoutItem* takeAt(int i) override
+    {
+        return (i >= 0 && i < m_items.size()) ? m_items.takeAt(i) : nullptr;
+    }
 
-	void removeWidget(QWidget* w)
-	{
-		for (int i = 0; i < m_items.size(); ++i)
-		{
-			if (m_items[i]->widget() == w)
-			{
-				delete m_items.takeAt(i);
-				return;
-			}
-		}
-	}
+    void removeWidget(QWidget* w)
+    {
+        for (int i = 0; i < m_items.size(); ++i)
+        {
+            if (m_items[i]->widget() == w)
+            {
+                delete m_items.takeAt(i);
+                return;
+            }
+        }
+    }
 
-	Qt::Orientations expandingDirections() const override { return {}; }
-	bool hasHeightForWidth() const override { return true; }
-	int heightForWidth(int width) const override { return doLayout(QRect(0, 0, width, 0), true); }
-	QSize sizeHint() const override { return minimumSize(); }
+    Qt::Orientations expandingDirections() const override
+    {
+        return {};
+    }
+    bool hasHeightForWidth() const override
+    {
+        return true;
+    }
+    int heightForWidth(int width) const override
+    {
+        return doLayout(QRect(0, 0, width, 0), true);
+    }
+    QSize sizeHint() const override
+    {
+        return minimumSize();
+    }
 
-	QSize minimumSize() const override
-	{
-		QSize size;
-		for (auto* item : m_items)
-			size = size.expandedTo(item->minimumSize());
-		const auto m = contentsMargins();
-		size += QSize(m.left() + m.right(), m.top() + m.bottom());
-		return size;
-	}
+    QSize minimumSize() const override
+    {
+        QSize size;
+        for (auto* item : m_items)
+            size = size.expandedTo(item->minimumSize());
+        const auto m = contentsMargins();
+        size += QSize(m.left() + m.right(), m.top() + m.bottom());
+        return size;
+    }
 
-	void setGeometry(const QRect& rect) override
-	{
-		QLayout::setGeometry(rect);
-		doLayout(rect, false);
-	}
+    void setGeometry(const QRect& rect) override
+    {
+        QLayout::setGeometry(rect);
+        doLayout(rect, false);
+    }
 
-private:
-	int doLayout(const QRect& rect, bool testOnly) const
-	{
-		const auto m = contentsMargins();
-		const QRect r = rect.adjusted(m.left(), m.top(), -m.right(), -m.bottom());
+  private:
+    int doLayout(const QRect& rect, bool testOnly) const
+    {
+        const auto m = contentsMargins();
+        const QRect r = rect.adjusted(m.left(), m.top(), -m.right(), -m.bottom());
 
-		int x = r.x(), y = r.y(), lineHeight = 0;
+        int x = r.x(), y = r.y(), lineHeight = 0;
 
-		for (auto* item : m_items)
-		{
-			QWidget* w = item->widget();
-			if (!w || !w->isVisible())
-				continue;
+        for (auto* item : m_items)
+        {
+            QWidget* w = item->widget();
+            if (!w || !w->isVisible())
+                continue;
 
-			const QSize sz = item->sizeHint();
-			if (x > r.x() && x + sz.width() > r.right() + 1)
-			{
-				x = r.x();
-				y += lineHeight + spacing();
-				lineHeight = 0;
-			}
+            const QSize sz = item->sizeHint();
+            if (x > r.x() && x + sz.width() > r.right() + 1)
+            {
+                x = r.x();
+                y += lineHeight + spacing();
+                lineHeight = 0;
+            }
 
-			if (!testOnly)
-				item->setGeometry(QRect(QPoint(x, y), sz));
+            if (!testOnly)
+                item->setGeometry(QRect(QPoint(x, y), sz));
 
-			x += sz.width() + spacing();
-			lineHeight = qMax(lineHeight, sz.height());
-		}
+            x += sz.width() + spacing();
+            lineHeight = qMax(lineHeight, sz.height());
+        }
 
-		return y + lineHeight - rect.y() + m.top() + m.bottom();
-	}
+        return y + lineHeight - rect.y() + m.top() + m.bottom();
+    }
 
-	QList<QLayoutItem*> m_items;
+    QList<QLayoutItem*> m_items;
 };
 
 // ============================================================================
@@ -116,83 +137,84 @@ private:
 // ============================================================================
 class TagChip : public QWidget
 {
-	Q_OBJECT
-public:
-	explicit TagChip(const QString& text, QWidget* parent = nullptr)
-		: QWidget(parent), m_text(text)
-	{
-		auto* hbox = new QHBoxLayout(this);
-		hbox->setContentsMargins(10, 2, 5, 4);   // 1px less top/bottom → shorter chip
-		hbox->setSpacing(4);
-		hbox->setAlignment(Qt::AlignVCenter);      // keep children vertically centred
+    Q_OBJECT
+  public:
+    explicit TagChip(const QString& text, QWidget* parent = nullptr) : QWidget(parent), m_text(text)
+    {
+        auto* hbox = new QHBoxLayout(this);
+        hbox->setContentsMargins(10, 2, 5, 4); // 1px less top/bottom → shorter chip
+        hbox->setSpacing(4);
+        hbox->setAlignment(Qt::AlignVCenter); // keep children vertically centred
 
-		m_label = new QLabel(text, this);
-		m_label->setAlignment(Qt::AlignVCenter);
+        m_label = new QLabel(text, this);
+        m_label->setAlignment(Qt::AlignVCenter);
 
-		m_close = new QToolButton(this);
-		m_close->setText("\xc3\x97"); // × U+00D7
-		m_close->setCursor(Qt::PointingHandCursor);
-		m_close->setFixedSize(16, 16);             // slightly smaller, easier to centre
-		m_close->setAutoRaise(true);
+        m_close = new QToolButton(this);
+        m_close->setText("\xc3\x97"); // × U+00D7
+        m_close->setCursor(Qt::PointingHandCursor);
+        m_close->setFixedSize(16, 16); // slightly smaller, easier to centre
+        m_close->setAutoRaise(true);
 
-		hbox->addWidget(m_label, 0, Qt::AlignVCenter);
-		hbox->addWidget(m_close, 0, Qt::AlignVCenter);
+        hbox->addWidget(m_label, 0, Qt::AlignVCenter);
+        hbox->addWidget(m_close, 0, Qt::AlignVCenter);
 
-		// Lock height to exactly what the layout needs so no invisible pixels
-		// bleed outside the painted border and overlap neighbouring chips.
-		setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-		adjustSize();
-		setFixedHeight(sizeHint().height());
-		refreshStyle();
+        // Lock height to exactly what the layout needs so no invisible pixels
+        // bleed outside the painted border and overlap neighbouring chips.
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        adjustSize();
+        setFixedHeight(sizeHint().height());
+        refreshStyle();
 
-		connect(m_close, &QToolButton::clicked, this, [this]() { emit removed(this); });
-	}
+        connect(m_close, &QToolButton::clicked, this, [this]() { emit removed(this); });
+    }
 
-	QString text() const { return m_text; }
+    QString text() const
+    {
+        return m_text;
+    }
 
-signals:
-	void removed(TagChip*);
+  signals:
+    void removed(TagChip*);
 
-protected:
-	void changeEvent(QEvent* e) override
-	{
-		QWidget::changeEvent(e);
-		if (e->type() == QEvent::PaletteChange || e->type() == QEvent::StyleChange)
-			refreshStyle();
-	}
+  protected:
+    void changeEvent(QEvent* e) override
+    {
+        QWidget::changeEvent(e);
+        if (e->type() == QEvent::PaletteChange || e->type() == QEvent::StyleChange)
+            refreshStyle();
+    }
 
-	void paintEvent(QPaintEvent*) override
-	{
-		QPainter p(this);
-		p.setRenderHint(QPainter::Antialiasing);
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing);
 
-		const QPalette& pal = palette();
-		QColor bg = pal.color(QPalette::Window);
-		bg = bg.lighter(bg.lightnessF() < 0.5f ? 130 : 92);
+        const QPalette& pal = palette();
+        QColor bg = pal.color(QPalette::Window);
+        bg = bg.lighter(bg.lightnessF() < 0.5f ? 130 : 92);
 
-		// 0.5px inset keeps the 1px stroke fully inside the widget rect
-		// so it never bleeds into the spacing gap between chips.
-		const QRectF chipRect = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
-		QPainterPath chipPath;
-		chipPath.addRoundedRect(chipRect, 10, 10);
-		p.fillPath(chipPath, bg);
-		p.setPen(QPen(pal.color(QPalette::Mid), 1));
-		p.drawPath(chipPath);
-	}
+        // 0.5px inset keeps the 1px stroke fully inside the widget rect
+        // so it never bleeds into the spacing gap between chips.
+        const QRectF chipRect = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+        QPainterPath chipPath;
+        chipPath.addRoundedRect(chipRect, 10, 10);
+        p.fillPath(chipPath, bg);
+        p.setPen(QPen(pal.color(QPalette::Mid), 1));
+        p.drawPath(chipPath);
+    }
 
-private:
-	void refreshStyle()
-	{
-		const QPalette& pal = palette();
+  private:
+    void refreshStyle()
+    {
+        const QPalette& pal = palette();
 
-		const QColor textColor = pal.color(QPalette::WindowText);
-		const QColor secondaryColor = pal.color(QPalette::PlaceholderText);
+        const QColor textColor = pal.color(QPalette::WindowText);
+        const QColor secondaryColor = pal.color(QPalette::PlaceholderText);
 
-		const QColor disabledText = pal.color(QPalette::Disabled, QPalette::WindowText);
-		const QColor disabledSecondary = pal.color(QPalette::Disabled, QPalette::PlaceholderText);
+        const QColor disabledText = pal.color(QPalette::Disabled, QPalette::WindowText);
+        const QColor disabledSecondary = pal.color(QPalette::Disabled, QPalette::PlaceholderText);
 
-		m_label->setStyleSheet(
-			QString(R"(
+        m_label->setStyleSheet(QString(R"(
             QLabel {
                 color: %1;
                 font-size: 13px;
@@ -202,12 +224,10 @@ private:
                 color: %2;
             }
         )")
-			.arg(textColor.name())
-			.arg(disabledText.name())
-		);
+                                   .arg(textColor.name())
+                                   .arg(disabledText.name()));
 
-		m_close->setStyleSheet(
-			QString(R"(
+        m_close->setStyleSheet(QString(R"(
             QToolButton {
                 color: %1;
                 background: transparent;
@@ -224,15 +244,15 @@ private:
                 color: %3;
             }
         )")
-			.arg(secondaryColor.name())     // normal (subtle)
-			.arg(textColor.name())          // hover (strong)
-			.arg(disabledSecondary.name())  // disabled (faded)
-		);
-	}
+                                   .arg(secondaryColor.name())    // normal (subtle)
+                                   .arg(textColor.name())         // hover (strong)
+                                   .arg(disabledSecondary.name()) // disabled (faded)
+        );
+    }
 
-	QLabel* m_label = nullptr;
-	QToolButton* m_close = nullptr;
-	QString      m_text;
+    QLabel* m_label = nullptr;
+    QToolButton* m_close = nullptr;
+    QString m_text;
 };
 
 // ============================================================================
@@ -248,86 +268,87 @@ private:
 // ============================================================================
 class TagBar : public QWidget
 {
-	Q_OBJECT
-public:
-	explicit TagBar(QWidget* parent = nullptr)
-		: QWidget(parent)
-	{
-		setMinimumHeight(32);
-		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-		m_layout = new FlowLayout(this, 4, 4);
-	}
+    Q_OBJECT
+  public:
+    explicit TagBar(QWidget* parent = nullptr) : QWidget(parent)
+    {
+        setMinimumHeight(32);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        m_layout = new FlowLayout(this, 4, 4);
+    }
 
-	QStringList tags() const
-	{
-		QStringList out;
-		for (auto* chip : m_chips)
-			out << chip->text();
-		return out;
-	}
+    QStringList tags() const
+    {
+        QStringList out;
+        for (auto* chip : m_chips)
+            out << chip->text();
+        return out;
+    }
 
-signals:
-	void tagsChanged(const QStringList&);
+  signals:
+    void tagsChanged(const QStringList&);
 
-public slots:
-	void addTag(const QString& rawText)
-	{
-		const QString t = rawText.trimmed();
-		if (t.isEmpty() || tags().contains(t, Qt::CaseInsensitive))
-			return;
+  public slots:
+    void addTag(const QString& rawText)
+    {
+        const QString t = rawText.trimmed();
+        if (t.isEmpty() || tags().contains(t, Qt::CaseInsensitive))
+            return;
 
-		auto* chip = new TagChip(t, this);
-		chip->show();
-		m_layout->addWidget(chip);
-		m_chips.append(chip);
+        auto* chip = new TagChip(t, this);
+        chip->show();
+        m_layout->addWidget(chip);
+        m_chips.append(chip);
 
-		connect(chip, &TagChip::removed, this, [this](TagChip* c) {
-			m_chips.removeOne(c);
-			m_layout->removeWidget(c);
-			c->deleteLater();
-			m_layout->invalidate();
-			adjustSize();
-			updateGeometry();
-			emit tagsChanged(tags());
-			});
+        connect(chip, &TagChip::removed, this,
+                [this](TagChip* c)
+                {
+                    m_chips.removeOne(c);
+                    m_layout->removeWidget(c);
+                    c->deleteLater();
+                    m_layout->invalidate();
+                    adjustSize();
+                    updateGeometry();
+                    emit tagsChanged(tags());
+                });
 
-		m_layout->invalidate();
-		adjustSize();
-		updateGeometry();
-		emit tagsChanged(tags());
-	}
+        m_layout->invalidate();
+        adjustSize();
+        updateGeometry();
+        emit tagsChanged(tags());
+    }
 
-	void removeLastTag()
-	{
-		if (m_chips.isEmpty())
-			return;
+    void removeLastTag()
+    {
+        if (m_chips.isEmpty())
+            return;
 
-		auto* chip = m_chips.takeLast();
-		m_layout->removeWidget(chip);
-		chip->deleteLater();
-		m_layout->invalidate();
-		adjustSize();
-		updateGeometry();
-		emit tagsChanged(tags());
-	}
+        auto* chip = m_chips.takeLast();
+        m_layout->removeWidget(chip);
+        chip->deleteLater();
+        m_layout->invalidate();
+        adjustSize();
+        updateGeometry();
+        emit tagsChanged(tags());
+    }
 
-	void clearTags()
-	{
-		for (auto* chip : m_chips)
-		{
-			m_layout->removeWidget(chip);
-			chip->deleteLater();
-		}
-		m_chips.clear();
-		m_layout->invalidate();
-		adjustSize();
-		updateGeometry();
-		emit tagsChanged({});
-	}
+    void clearTags()
+    {
+        for (auto* chip : m_chips)
+        {
+            m_layout->removeWidget(chip);
+            chip->deleteLater();
+        }
+        m_chips.clear();
+        m_layout->invalidate();
+        adjustSize();
+        updateGeometry();
+        emit tagsChanged({});
+    }
 
-private:
-	FlowLayout* m_layout = nullptr;
-	QList<TagChip*> m_chips;
+  private:
+    FlowLayout* m_layout = nullptr;
+    QList<TagChip*> m_chips;
 };
 
 // ============================================================================
@@ -338,38 +359,37 @@ private:
 // ============================================================================
 class TagLineEdit : public QLineEdit
 {
-	Q_OBJECT
-public:
-	using QLineEdit::QLineEdit;
+    Q_OBJECT
+  public:
+    using QLineEdit::QLineEdit;
 
-signals:
-	void tagEntered(const QString&);
-	void backspaceOnEmpty();
+  signals:
+    void tagEntered(const QString&);
+    void backspaceOnEmpty();
 
-protected:
-	void keyPressEvent(QKeyEvent* e) override
-	{
-		const bool hardCommit = e->key() == Qt::Key_Return
-			|| e->key() == Qt::Key_Enter
-			|| e->key() == Qt::Key_Tab;
+  protected:
+    void keyPressEvent(QKeyEvent* e) override
+    {
+        const bool hardCommit =
+            e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter || e->key() == Qt::Key_Tab;
 
-		if (hardCommit)
-		{
-			const QString t = text().trimmed();
-			if (!t.isEmpty())
-				emit tagEntered(t);
-			clear();
-			e->accept();
-			return;
-		}
+        if (hardCommit)
+        {
+            const QString t = text().trimmed();
+            if (!t.isEmpty())
+                emit tagEntered(t);
+            clear();
+            e->accept();
+            return;
+        }
 
-		if (e->key() == Qt::Key_Backspace && text().isEmpty())
-		{
-			emit backspaceOnEmpty();
-			e->accept();
-			return;
-		}
+        if (e->key() == Qt::Key_Backspace && text().isEmpty())
+        {
+            emit backspaceOnEmpty();
+            e->accept();
+            return;
+        }
 
-		QLineEdit::keyPressEvent(e);
-	}
+        QLineEdit::keyPressEvent(e);
+    }
 };

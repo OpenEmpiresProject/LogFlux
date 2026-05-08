@@ -1,27 +1,26 @@
 #include "LogTextEdit.h"
 
-LogTextEdit::LogTextEdit(QWidget* parent)
-	: QPlainTextEdit(parent)
+LogTextEdit::LogTextEdit(QWidget* parent) : QPlainTextEdit(parent)
 {
 }
 
 // Wrappers
 QTextBlock LogTextEdit::getFirstVisibleBlock() const
 {
-	return firstVisibleBlock();
+    return firstVisibleBlock();
 }
 
 QPointF LogTextEdit::getContentOffset() const
 {
-	return contentOffset();
+    return contentOffset();
 }
 
 QRectF LogTextEdit::getBlockBoundingGeometry(const QTextBlock& block) const
 {
-	return blockBoundingGeometry(block);
+    return blockBoundingGeometry(block);
 }
 
 QRectF LogTextEdit::getBlockBoundingRect(const QTextBlock& block) const
 {
-	return blockBoundingRect(block);
+    return blockBoundingRect(block);
 }

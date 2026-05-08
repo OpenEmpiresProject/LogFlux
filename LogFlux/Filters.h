@@ -13,38 +13,36 @@
 
 class IFilter
 {
-public:
-	virtual ~IFilter() = default;
-	// Return true if the given line matches this filter.
-	virtual bool matches(const QString& line) const = 0;
+  public:
+    virtual ~IFilter() = default;
+    // Return true if the given line matches this filter.
+    virtual bool matches(const QString& line) const = 0;
 };
 
 class LiteralFilter : public IFilter
 {
-public:
-	explicit LiteralFilter(QString token)
-		: m_token(std::move(token))
-	{
-	}
+  public:
+    explicit LiteralFilter(QString token) : m_token(std::move(token))
+    {
+    }
 
-	bool matches(const QString& line) const override;
+    bool matches(const QString& line) const override;
 
-private:
-	QString m_token;
+  private:
+    QString m_token;
 };
 
 class OrFilter : public IFilter
 {
-public:
-	explicit OrFilter(std::vector<std::shared_ptr<IFilter>> parts)
-		: m_parts(std::move(parts))
-	{
-	}
+  public:
+    explicit OrFilter(std::vector<std::shared_ptr<IFilter>> parts) : m_parts(std::move(parts))
+    {
+    }
 
-	bool matches(const QString& line) const override;
+    bool matches(const QString& line) const override;
 
-private:
-	std::vector<std::shared_ptr<IFilter>> m_parts;
+  private:
+    std::vector<std::shared_ptr<IFilter>> m_parts;
 };
 
 // Parse a single tag string into an IFilter instance.

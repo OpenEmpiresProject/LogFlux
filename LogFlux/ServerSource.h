@@ -1,20 +1,21 @@
 #pragma once
 
 #include "DataSource.h"
+
+#include <QHash>
+#include <QSet>
 #include <QString>
 #include <QTcpServer>
 #include <QTcpSocket>
-#include <QHash>
-#include <QSet>
 
 class ServerSource : public DataSource
 {
     Q_OBJECT
-public:
-    ServerSource(const QString &host, int port);
+  public:
+    ServerSource(const QString& host, int port);
     ~ServerSource() override;
 
-private:
+  private:
     QString m_host;
     int m_port;
 

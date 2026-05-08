@@ -1,17 +1,15 @@
 #include "ServerSource.h"
 
-#include <QStandardItem>
+#include <QDebug>
+#include <QHostAddress>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QSet>
-#include <QHostAddress>
-#include <QDebug>
-#include <QJsonArray>
+#include <QStandardItem>
 
-ServerSource::ServerSource(const QString &host, int port)
-    : m_host(host)
-    , m_port(port)
+ServerSource::ServerSource(const QString& host, int port) : m_host(host), m_port(port)
 {
     m_server = new QTcpServer(this);
     connect(m_server, &QTcpServer::newConnection, this, &ServerSource::handleNewConnection);
@@ -19,13 +17,13 @@ ServerSource::ServerSource(const QString &host, int port)
 
 ServerSource::~ServerSource()
 {
-    if (m_server && m_server->isListening()) 
+    if (m_server && m_server->isListening())
         m_server->close();
 
     // Ensure sockets are closed and deleted
-    for (auto sock : m_buffers.keys()) 
+    for (auto sock : m_buffers.keys())
     {
-        if (sock) 
+        if (sock)
         {
             sock->disconnect(this);
             sock->close();
@@ -51,9 +49,10 @@ void ServerSource::startProcessing()
     else
         addr = QHostAddress(m_host);
 
-    if (!m_server->listen(addr, static_cast<quint16>(m_port))) 
+    if (!m_server->listen(addr, static_cast<quint16>(m_port)))
     {
-        qWarning() << "ServerSource: failed to listen on" << m_host << m_port << "error:" << m_server->errorString();
+        qWarning() << "ServerSource: failed to listen on" << m_host << m_port
+                   << "error:" << m_server->errorString();
         m_listening = false;
         emit onStatusChange(this, false);
         return;
@@ -66,7 +65,8 @@ void ServerSource::startProcessing()
     if (m_port == 0)
         m_port = m_server->serverPort();
 
-    qDebug() << "ServerSource listening on" << m_server->serverAddress().toString() << ":" << m_port;
+    qDebug() << "ServerSource listening on" << m_server->serverAddress().toString() << ":"
+             << m_port;
 }
 
 void ServerSource::refresh()
@@ -80,7 +80,7 @@ void ServerSource::refresh()
 
 void ServerSource::handleNewConnection()
 {
-    while (m_server->hasPendingConnections()) 
+    while (m_server->hasPendingConnections())
     {
         QTcpSocket* sock = m_server->nextPendingConnection();
         if (!sock)
@@ -92,7 +92,8 @@ void ServerSource::handleNewConnection()
         connect(sock, &QTcpSocket::disconnected, this, &ServerSource::handleDisconnected);
         // Ensure socket is deleted later
         connect(sock, &QTcpSocket::disconnected, sock, &QTcpSocket::deleteLater);
-        qDebug() << "ServerSource: new connection from" << sock->peerAddress().toString() << sock->peerPort();
+        qDebug() << "ServerSource: new connection from" << sock->peerAddress().toString()
+                 << sock->peerPort();
     }
 }
 
@@ -109,7 +110,7 @@ void ServerSource::handleReadyRead()
     m_buffers[sock].append(data);
 
     // Split into lines by '\n', keep remainder in buffer
-    while (true) 
+    while (true)
     {
         int idx = m_buffers[sock].indexOf('\n');
         if (idx < 0)
