@@ -13,28 +13,10 @@
 
 class DataSource;
 
-// This class will make it possible to have 1:1 signal:slot connections between the
-// LogFlux main window and the data source running in worker threads.
-// Otherwise, LogFlux has to broadcast while worker filter out signals.
-class SourceSignalDelegator : public QObject
-{
-    Q_OBJECT
-
-public:
-    void emiRefresh()
-    {
-        emit refresh();
-    }
-
-signals:
-	void refresh();
-};
-
+// Data sources now live on the main (GUI) thread. No thread delegation is used.
 struct SourceData
 {
     DataSource* source = nullptr;
-    QThread* thread = nullptr;
-    SourceSignalDelegator* signalDelagator = nullptr;
 	bool online = false;
 	int lineCount = 0;
 	int errorCount = 0;
@@ -85,6 +67,8 @@ private:
 	// full buffer of lines currently shown (cleared on onClearLog)
 	QList<QString> m_allLines;
 
+	bool m_tailing = false;
+
 	QTextCharFormat formatForLine(const QString& line);
 	void startServer(const QString& host, int port);
 	void updateSelections();
@@ -114,6 +98,8 @@ private:
 	// Apply quick filters to the currently buffered lines and rebuild view.
 	void applyQuickFilters();
 
+	void tail(bool start);
+
 private slots:
 	void onAddFileSource();
 	void onClearLog();
@@ -131,6 +117,7 @@ private slots:
 	void filtersChanged(const QStringList& filters);
 	void filtersEnabled(bool enabled);
 	void onQuickFiltersChanged(bool checked);
+	void onCursorPositionChanged();
 
 	// Bookmark toggled in the bookmark view (visible block number, enabled)
 	void onBookmarkToggled(int visibleBlockNumber, bool enabled);

@@ -11,7 +11,6 @@
 #include <QFontDatabase>
 #include <QListWidget>
 #include <QScrollBar>
-#include "QThread"
 #include <QInputDialog>
 #include <QWidgetAction>
 #include <QShortcut>
@@ -51,8 +50,7 @@ LogFlux::LogFlux(QWidget *parent)
 	connect(ui.btnReload, &QPushButton::clicked, this, &LogFlux::onRefreshLog);
 	connect(ui.btnBrowseFile, &QPushButton::clicked, this, &LogFlux::onAddFileSource);
 	connect(ui.btnSettings, &QPushButton::clicked, this, &LogFlux::launchSettingsWindow);
-	connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged, this, &LogFlux::highlightCurrentLine);
-	connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged, this, &LogFlux::updateSelections);
+	connect(ui.plainTextEdit, &QPlainTextEdit::cursorPositionChanged, this, &LogFlux::onCursorPositionChanged);
 	connect(ui.editSearch, &QLineEdit::textChanged, this, &LogFlux::highlightAllMatches);
 	connect(ui.btnSearchDown, &QPushButton::clicked, this, &LogFlux::findNext);
 	connect(ui.btnSearchUp, &QPushButton::clicked, this, &LogFlux::findPrevious);
@@ -85,21 +83,20 @@ void LogFlux::rebuildFilterObjects()
 
 void LogFlux::addNewSource(SourceType type, DataSource* source)
 {
-	auto* thread = new QThread;
-	source->moveToThread(thread);
-
 	SourceData sourceData;
 	sourceData.source = source;
-	sourceData.thread = thread;
-	sourceData.signalDelagator = new SourceSignalDelegator();
 	m_sources.insert(type, std::move(sourceData));
 
+	// Parent to this to ensure proper deletion on the GUI thread's event loop.
+	if (source->parent() == nullptr)
+		source->setParent(this);
+
+	// Direct connections now that sources live on the main thread.
 	QObject::connect(source, &DataSource::onNewLine, this, &LogFlux::onNewLine);
 	QObject::connect(source, &DataSource::onStatusChange, this, &LogFlux::onSourceStatusChange);
-	QObject::connect(thread, &QThread::started, source, &DataSource::startProcessing);
-	QObject::connect(sourceData.signalDelagator, &SourceSignalDelegator::refresh, source, &DataSource::refresh);
 
-	thread->start();
+	// Start processing immediately on the main thread.
+	source->startProcessing();
 }
 
 void LogFlux::onAddFileSource()
@@ -108,6 +105,7 @@ void LogFlux::onAddFileSource()
     if (path.isEmpty())
         return;
 
+	onClearLog();
 	destroyExistingSource(SourceType::FILE_SOURCE);
 
 	DataSource* source = new FileSource(path);
@@ -118,7 +116,6 @@ void LogFlux::onAddFileSource()
 
 	ui.labelSourceStatus->setText(description);
 	ui.labelSourceStatus->setVisible(true);
-	onClearLog();
 }
 
 void LogFlux::startServer(const QString& host, int port)
@@ -163,7 +160,8 @@ void LogFlux::onRefreshLog()
 	if (m_sources.contains(m_currentSource))
 	{
 		auto& source = m_sources[m_currentSource];
-		source.signalDelagator->emiRefresh();
+		if (source.source)
+			source.source->refresh();
 	}
 }
 
@@ -306,8 +304,6 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 
 	QTextCharFormat fmt = formatForLine(line);
 
-	bool atEnd = ui.plainTextEdit->textCursor().atEnd();
-	
 	// create a separate cursor for insertion
 	QTextCursor insertCursor(ui.plainTextEdit->document());
 	insertCursor.movePosition(QTextCursor::End);
@@ -338,7 +334,7 @@ void LogFlux::onNewLine(DataSource* source, const QString& line)
 		ui.scrollbarMinimap->setBookmark(blockNumber, true);
 	}
 
- 	if (atEnd)
+ 	if (m_tailing)
  	{
  		ui.plainTextEdit->moveCursor(QTextCursor::End);
  	}
@@ -898,6 +894,7 @@ void LogFlux::setupShortcuts()
 	new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_G), this, [this]()
 		{
 			goToEndOfLog();
+			tail(true);
 		});
 
 	new QShortcut(Qt::Key_E, this, [this]()
@@ -988,32 +985,13 @@ void LogFlux::destroyExistingSource(SourceType type)
 	{
 		auto sourceData = m_sources[type];
 
-		// Move the source back to the main thread so deletion happens on the GUI thread's event loop.
-		// If the object is left in a worker thread whose event loop stops, deleteLater() won't run and
-		// the object can be left in an invalid state.
+		// Disconnect any signals to this LogFlux instance.
 		if (sourceData.source)
-		{
-			QThread* mainThread = QCoreApplication::instance()->thread();
-			sourceData.source->moveToThread(mainThread);
-		}
+			QObject::disconnect(sourceData.source, nullptr, this, nullptr);
 
-		// Ensure the QThread object is deleted after it finishes.
-		connect(sourceData.thread, &QThread::finished,
-			sourceData.thread, &QObject::deleteLater);
-
-		// Tell the worker thread to stop and wait for it.
-		sourceData.thread->quit();
-		sourceData.thread->wait(); // Wait indefinitely 
-
-		// signalDelagator was created on the main thread; delete it directly.
-		delete sourceData.signalDelagator;
-		sourceData.signalDelagator = nullptr;
-
-		// Now the source object can be safely deleted on the main (GUI) thread.
+		// Schedule deletion on the GUI thread's event loop.
 		if (sourceData.source)
-		{
 			sourceData.source->deleteLater();
-		}
 
 		// Remove from map
 		m_sources.remove(type);
@@ -1088,6 +1066,11 @@ void LogFlux::applyQuickFilters()
 		updateSelections();
 }
 
+void LogFlux::tail(bool start)
+{
+	m_tailing = start;
+}
+
 // Called when either quick-filter checkbox changes state.
 void LogFlux::onQuickFiltersChanged(bool /*checked*/)
 {
@@ -1121,6 +1104,13 @@ void LogFlux::onQuickFiltersChanged(bool /*checked*/)
 			filtersChanged({});
 		}
 	}
+}
+
+void LogFlux::onCursorPositionChanged()
+{
+	highlightCurrentLine();
+	updateSelections();
+	tail(false);
 }
 
 void LogFlux::onBookmarkToggled(int visibleBlockNumber, bool enabled)
