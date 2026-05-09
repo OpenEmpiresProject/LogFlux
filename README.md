@@ -11,7 +11,7 @@ Network and File log viewer
 </p>
 
 ## Overview
-LogFlux is a lightweight desktop application for viewing and following log data from local files and network sources in real time. It is implemented in modern C++ with a Qt-based user interface and focuses on fast navigation, searching with jump-to-result, auto-follow (tail) mode, and a compact keyboard-friendly UI.
+LogFlux is a lightweight desktop application for viewing and following log data from local files and as a network server in real time. It is implemented in modern C++ with a Qt-based user interface and focuses on fast navigation, searching, filtering, tailing, and a compact keyboard-friendly UI.
 
 ![Screenshot](doc/screenshot_1.png)
 ![Screenshot](doc/screenshot_2.png)
@@ -45,7 +45,7 @@ LogFlux is a lightweight desktop application for viewing and following log data 
 
 
 ## Usage
-To use LogFlux, simply launch the application and navigate to the desired log file or use network (TCP) server. Utilize the available keyboard shortcuts to navigate the log.
+To use LogFlux, simply launch the application and navigate to the desired log file or use network (TCP) server. Utilize the available keyboard shortcuts to navigate the log. By default LogFlux will host a TCP server at 5000 and listen to any new line delimited log lines in the server mode. You can have a log sinker in your application to connect to this server and send log lines, or as a separate agent to poll log file and send over network. Or simply open the same log file in LogFlux and it will keep tailing the file.
 
 ## Technology & Dependencies
 LogFlux is built using the following technologies:

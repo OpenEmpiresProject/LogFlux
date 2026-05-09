@@ -46,6 +46,7 @@ set(PROJECT_SOURCES
     MiniMap.cpp
     Filters.h
     Filters.cpp
+    app.rc
 )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
