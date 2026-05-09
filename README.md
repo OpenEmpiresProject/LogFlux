@@ -1,6 +1,15 @@
 ﻿# LogFlux
 Network and File log viewer
 
+<p align="center">
+    <img src="https://img.shields.io/github/languages/top/OpenEmpiresProject/LogFlux" />
+    <img src="https://img.shields.io/github/v/release/OpenEmpiresProject/LogFlux" />
+    <img src="https://img.shields.io/github/last-commit/OpenEmpiresProject/LogFlux" />
+    <a href="https://discord.gg/zTGvvhVm">
+        <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
+    </a>
+</p>
+
 ## Overview
 LogFlux is a lightweight desktop application for viewing and following log data from local files and network sources in real time. It is implemented in modern C++ with a Qt-based user interface and focuses on fast navigation, searching with jump-to-result, auto-follow (tail) mode, and a compact keyboard-friendly UI.
 
