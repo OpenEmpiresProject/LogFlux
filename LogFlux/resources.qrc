@@ -1,17 +1,10 @@
 <RCC>
-  <qresource prefix="/">
-    <file>images/error.png</file>
-    <file>images/warning.png</file>
-    <file>images/bookmark.png</file>
-    <file>images/app.png</file>
-    <file>images/offline.png</file>
-    <file>images/online.png</file>
-    <file>images/add_file.png</file>
-    <file>images/add_server.png</file>
-    <file>images/clear_filters.png</file>
-    <file>images/clear_log.png</file>
-    <file>images/refresh.png</file>
-    <file>images/stop_tail.png</file>
-    <file>images/tail_log.png</file>
-  </qresource>
+    <qresource prefix="/">
+        <file>images/error.png</file>
+        <file>images/warning.png</file>
+        <file>images/bookmark.png</file>
+        <file>images/app.png</file>
+        <file>images/offline.png</file>
+        <file>images/online.png</file>
+    </qresource>
 </RCC>

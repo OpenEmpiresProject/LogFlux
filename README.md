@@ -7,6 +7,37 @@ LogFlux is a lightweight desktop application for viewing and following log data 
 ![Screenshot](doc/screenshot_1.png)
 ![Screenshot](doc/screenshot_2.png)
 
+## Features
+- Open and tail local log files
+- Hosting TCP server for accepting newline delimited log lines
+- Searching and iterating through search results
+- Filtering log based on AND, OR conditions
+- Quick filters for errors and warnings
+- Bookmarking log lines
+- Stats; total lines, errors, and warnings
+- Minimap based scrolling
+- less/vim inspired keyboard navigations
+    - **ctrl+f** search the log                         
+    - **e** go to next error                       
+    - **shift+e** go to previous error
+    - **enter (inside search)** go to next search result               
+    - **shift+enter (inside search)** go to previous search result           
+    - **w** go to next warning
+    - **shift+w** go to previous warning
+    - **n (inside logview)** go to next search result               
+    - **shift+n (inside logview)** go to previous search result           
+    - **space** scroll down by one page
+    - **shift+space** scroll up by one page
+    - **g** go to start of the log                 
+    - **shift+g** go to end of the log (and tail)        
+    - **m** bookmark current line
+    - **b** go to next bookmark
+    - **shift+b** go to previous bookmark
+
+
+## Usage
+To use LogFlux, simply launch the application and navigate to the desired log file or use network (TCP) server. Utilize the available keyboard shortcuts to navigate the log.
+
 ## Technology & Dependencies
 LogFlux is built using the following technologies:
 - **Programming Language**: C++17
@@ -24,26 +55,16 @@ A small Python script exists at `tests/send_logs.py` to push sample log lines to
 
 python tests/send_logs.py
 
-## Current Features
-- Open and follow local log files.
-- Hosting TCP server for accepting newline delimited log lines.
-- Searching with next/previous result jumping and display of total hits.
-- Tailing logs (for both file and network modes).
-- Log level based text coloring.
-- Jumping to log start and end with `less` sort of shortcuts
-- Keyboard navigations (navigating between lines, jumping to start/end of the log)
-- Filters.
-- Bookmark support.
-- Stats; total lines, errors, and warnings.
-- Minimap based scrolling.
-- Shortcuts for jumping between errors and warnings.
-- 
-## Planned Features
-- Ability to select case sensitivity, whole word and regex for searching.
-- Support drag and drop of files.
-
-## Usage
-To use LogFlux, simply launch the application and navigate to the desired log file or use network (TCP) server. Utilize the search and filter functionalities to find specific entries quickly.
-
 ## Contributing
-Contributions are welcome.
+
+Contributions of all sizes are welcome — whether it's fixing a typo, improving the UI, reporting bugs, suggesting ideas, or implementing new features.
+
+If you're looking for something to work on, here are a few areas that could use help:
+
+### Ideas & Areas for Contribution
+- Configurable dark/light themes
+- Lazy loading for large log files
+- Quick filters for bookmarks
+- Command line argument support
+- Additional network protocols and formats
+- Network log sinks for popular C++ logging frameworks such as spdlog and Boost.Log

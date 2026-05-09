@@ -5,6 +5,7 @@
 #include "MiniMap.h"
 #include "ServerSource.h"
 #include "Settings.h"
+#include "Version.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -22,7 +23,8 @@
 LogFlux::LogFlux(QWidget* parent) : QMainWindow(parent)
 {
     ui.setupUi(this);
-
+    setWindowTitle(QString("LogFlux ") + APP_VERSION);
+    
     // Set monospace font
     QFont font;
     font.setFamilies(
