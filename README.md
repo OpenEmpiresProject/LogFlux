@@ -1,5 +1,9 @@
 ﻿# LogFlux
-Network and File log viewer
+Network and File log viewer.
+
+<p align="center">
+  <img src="LogFlux/images/app.png" alt="LogFlux Logo" width="128"/>
+</p>
 
 <p align="center">
     <img src="https://img.shields.io/github/languages/top/OpenEmpiresProject/LogFlux" />
