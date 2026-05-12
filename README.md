@@ -47,6 +47,24 @@ LogFlux is a lightweight desktop application for viewing and following log data 
 ## Usage
 To use LogFlux, simply launch the application and navigate to the desired log file or use network (TCP) server. Utilize the available keyboard shortcuts to navigate the log. By default LogFlux will host a TCP server at 5000 and listen to any new line delimited log lines in the server mode. You can have a log sinker in your application to connect to this server and send log lines, or as a separate agent to poll log file and send over network. Or simply open the same log file in LogFlux and it will keep tailing the file.
 
+### Example spdlog sink
+```cpp
+spdlog::sinks::tcp_sink_config tcpConfig("localhost", 5000);
+tcpConfig.lazy_connect = true;
+tcpConfig.timeout_ms = 10;
+auto tcpSink = std::make_shared<spdlog::sinks::tcp_sink_mt>(tcpConfig);
+
+spdlog::sinks_init_list sinks{consoleSink, fileSink, tcpSink};
+
+spdlog::init_thread_pool(8192, 1);
+auto logger = std::make_shared<spdlog::async_logger>("multi_sink", sinks, spdlog::thread_pool(),
+                                                     spdlog::async_overflow_policy::block);
+
+spdlog::set_default_logger(logger);
+```
+
+> NOTE: You might want to use async loggers or use timeouts to prevent application gettting blocked if the LogFlux is not launched.
+
 ## Technology & Dependencies
 LogFlux is built using the following technologies:
 - **Programming Language**: C++17
@@ -76,4 +94,3 @@ If you're looking for something to work on, here are a few areas that could use 
 - Quick filters for bookmarks
 - Command line argument support
 - Additional network protocols and formats
-- Network log sinks for popular C++ logging frameworks such as spdlog and Boost.Log
